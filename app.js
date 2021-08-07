@@ -31,10 +31,7 @@ var permits = [
 	,{"bin__":"2063241","filing_date":"1991-07-31 ","owner_s_business_name":"318 REALTY CO.","owner_s_first_name":"MORRIS","owner_s_last_name":"PODOLSKI","owner_s_house__":"3153","owner_s_house_street_name":"PERRY AV","city":"BX","state":"NY","owner_s_zip_code":"10467","owner_s_phone__":"2127999050"}
 ];
 
-var arrayList = [], obj_permits_processed = [];
-
-//"violationid":"14485735","inspectiondate":"2021-08-06T00:00:00.000","novdescription":"HMC ADM CODE: ï¿½ 27-2017.4 ABATE THE INFESTATION CONSISTING OF ROACHES IN THE ENTIRE APARTMENT LOCATED AT APT A1, 1st STORY, 1st APARTMENT FROM WEST AT NORTH","bin":"4029850"
-//"bin__":"2063241","filing_date":"1991-07-31 ","owner_s_business_name":"318 REALTY CO.","owner_s_first_name":"MORRIS","owner_s_last_name":"PODOLSKI","owner_s_house__":"3153","owner_s_house_street_name":"PERRY AV","city":"BX","state":"NY","owner_s_zip_code":"10467","owner_s_phone__":"2127999050"
+var arrayList = [];
 
 for (var i in violations) {
 	var obj = {
@@ -49,21 +46,12 @@ for (var i in violations) {
 			obj.owner_business = permits[j].owner_s_business_name,
 			obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_owners_last_name}`,
 			obj.owner_address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}, ${permits[j].city}, ${permits[j].state}, ${permits[j].owner_s_zip_code}`,
-			obj.owner_phone = permits[j].owner_s_phone__,
-			obj_permits_processed[permits[j].bin] = true;
+			obj.owner_phone = permits[j].owner_s_phone__
 		}
 	}
 
 	obj.bin = obj.bin || 'No BIN record';
 	arrayList.push(obj);
 }
-
-/*
-for (var j in c) {
-	if (typeof obj_permits_processed[c[j].bin] == 'undefined') {
-		arrayList.push({bin: c[j].bin, name: c[j].name, goal: 'no', circle: c[j].circle});
-	}
-}
-*/
 
 console.log(arrayList);
