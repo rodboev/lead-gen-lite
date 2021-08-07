@@ -44,7 +44,7 @@ for (var i in violations) {
 			obj.bin = permits[j].bin__; 
 			obj.filing_date = permits[j].filing_date,
 			obj.owner_business = permits[j].owner_s_business_name,
-			obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_owner_s_last_name}`,
+			obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_last_name}`,
 			obj.owner_address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}, ${permits[j].city}, ${permits[j].state}, ${permits[j].owner_s_zip_code}`,
 			obj.owner_phone = permits[j].owner_s_phone__
 		}
