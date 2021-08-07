@@ -35,6 +35,7 @@ var arrayList = [];
 
 for (var i in violations) {
 	var obj = {
+		inspectiondate: violations[i].inspectiondate,
 		violation: violations[i].novdescription,
 		bin: violations[i].bin,
 	};
@@ -42,11 +43,11 @@ for (var i in violations) {
 	for (var j in permits) {
 		if (violations[i].bin == permits[j].bin__) {
 			obj.bin = permits[j].bin__; 
-			obj.filing_date = permits[j].filing_date,
-			obj.owner_business = permits[j].owner_s_business_name,
-			obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_last_name}`,
-			obj.owner_address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}, ${permits[j].city}, ${permits[j].state}, ${permits[j].owner_s_zip_code}`,
-			obj.owner_phone = permits[j].owner_s_phone__
+			obj.filed = permits[j].filing_date;
+			obj.owner_business = permits[j].owner_s_business_name;
+			obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_last_name}`;
+			obj.owner_address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}, ${permits[j].city}, ${permits[j].state}, ${permits[j].owner_s_zip_code}`;
+			obj.owner_phone = permits[j].owner_s_phone__;
 		}
 	}
 
