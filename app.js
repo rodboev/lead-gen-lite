@@ -1,16 +1,22 @@
 const axios = require('axios');
-const setup = require('axios-cache-adapter');
+const axiosCacheAdapter = require('axios-cache-adapter');
 const converter = require('json-2-csv');
 const express = require('express');
 
 const getDate = () => new Date().toLocaleString('en-US');
 
+const cache = axiosCacheAdapter.setupCache({ maxAge: 15 * 60 * 1000 });
+const api = axios.create({ adapter: cache.adapter });
+  
 async function main() {
-	const violationsNum = 5000;
+	const violationsNum = 500;
 	const violationsURL = "https://data.cityofnewyork.us/resource/mkgf-zjhb.json?$select=distinct%20violationid,inspectiondate,novdescription,bin&$order=violationid%20DESC&$limit=" + violationsNum;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
-	const violationsReq = await axios.get(violationsURL);
+	const violationsReq = await api({
+		url: violationsURL,
+		method: 'get'
+	});
 	const violations = violationsReq.data;
 
 	let binSet = new Set();
@@ -23,7 +29,10 @@ async function main() {
 	const permitsURL = `https://data.cityofnewyork.us/resource/ipu4-2q9a.json?$select=bin__,filing_date,owner_s_business_name,owner_s_first_name,owner_s_last_name,owner_s_house__,owner_s_house_street_name,city,state,owner_s_zip_code,owner_s_phone__&$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
 
 	console.log(`[${getDate()}] Requesting ${binSet.size} permits...`);
-	const permitsReq = await axios.get(permitsURL);
+	const permitsReq = await api({
+		url: permitsURL,
+		method: 'get'
+	});
 	const permits = permitsReq.data;
 
 	let violationsArr = [];
