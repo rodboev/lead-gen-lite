@@ -5,12 +5,12 @@ const express = require('express');
 const getDate = () => new Date().toLocaleString('en-US');
 
 async function main() {
-	const violationsNum = 2000;
+	const violationsNum = 5000;
 	const violationsURL = "https://data.cityofnewyork.us/resource/mkgf-zjhb.json?$select=distinct%20violationid,inspectiondate,novdescription,bin&$order=violationid%20DESC&$limit=" + violationsNum;
-	const violationsReq = await axios.get(violationsURL);
-	const violations = violationsReq.data;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
+	const violationsReq = await axios.get(violationsURL);
+	const violations = violationsReq.data;
 
 	let binSet = new Set();
 
@@ -19,10 +19,9 @@ async function main() {
 	}
 
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
-	const permitsURL = "https://data.cityofnewyork.us/resource/ipu4-2q9a.json?$select=bin__,filing_date,owner_s_business_name,owner_s_first_name,owner_s_last_name,owner_s_house__,owner_s_house_street_name,city,state,owner_s_zip_code,owner_s_phone__&$where=bin__%20in" + binsToRequest;
+	const permitsURL = `https://data.cityofnewyork.us/resource/ipu4-2q9a.json?$select=bin__,filing_date,owner_s_business_name,owner_s_first_name,owner_s_last_name,owner_s_house__,owner_s_house_street_name,city,state,owner_s_zip_code,owner_s_phone__&$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
 
 	console.log(`[${getDate()}] Requesting ${binSet.size} permits...`);
-
 	const permitsReq = await axios.get(permitsURL);
 	const permits = permitsReq.data;
 
@@ -63,16 +62,17 @@ async function main() {
 		}
 	}
 
-	return await converter.json2csvAsync(violationsArr);
+	console.log(`[${getDate()}] Returned ${Object.keys(violationsArr).length} records.`);
+	const csvOutput =  await converter.json2csvAsync(violationsArr);
+	return csvOutput;
 }
 
 const app = express();
 
-app.get('/lead-gen-lite', async (req, res) => {
+app.get('/leads.csv', async (req, res) => {
 	try {
-		const csvOutput = await main();
-		res.header('Content-Type', 'text/plain').send(csvOutput);
-		console.log(`[${getDate()}] Done\n`);
+		const response = await main();
+		res.header('Content-Type', 'text/plain').send(response);
 	}
 	catch (error) {
 		console.log(error);
