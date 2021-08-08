@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "axios": "^0.21.1",
+    "axios-cache-adapter": "^2.7.3",
     "express": "^4.17.1",
     "json-2-csv": "^3.14.2"
   },
@@ -9,6 +10,7 @@
     "nodemon": "^2.0.12"
   },
   "scripts": {
+    "start": "node app.js",
     "dev": "nodemon ./scripts/dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
