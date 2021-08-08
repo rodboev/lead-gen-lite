@@ -1,8 +1,6 @@
 {
   "dependencies": {
     "axios": "^0.21.1",
-    "axios-cache-adapter": "^2.7.3",
-    "axois": "^0.0.1-security",
-    "node-jq": "^2.0.0"
+    "json-2-csv": "^3.14.2"
   }
 }

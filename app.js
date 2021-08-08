@@ -1,4 +1,5 @@
 var axios = require('axios');
+let converter = require('json-2-csv');
 
 (async () => {
 	const violationsURL = "https://data.cityofnewyork.us/resource/mkgf-zjhb.json?$select=distinct%20violationid,inspectiondate,novdescription,bin&$order=violationid%20DESC&$limit=50";
@@ -26,7 +27,6 @@ var axios = require('axios');
 	let lastViolationId;
 
 	const formatDate = dateStr => new Date(dateStr).toISOString().substring(0,10);
-	// const cleanString = str => str.replace(/[^ -~]+/g, ''); // remove non-printable
 	const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 		.replace(/, \d+?.. STORY, .+/g, '');
@@ -58,7 +58,8 @@ var axios = require('axios');
 			}
 		}
 	}
-	
-	console.log(violationsArr);
+
+	const csvOutput = await converter.json2csvAsync(violationsArr);
+    console.log(csvOutput);
 
 })();
