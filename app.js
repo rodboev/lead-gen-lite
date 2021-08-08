@@ -25,25 +25,35 @@ var axios = require('axios');
 	let obj;
 	let lastViolationId;
 
+	const formatDate = dateStr => new Date(dateStr).toISOString().substring(0,10);
+	// const cleanString = str => str.replace(/[^ -~]+/g, ''); // remove non-printable
+	const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
+		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
+		.replace(/, \d+?.. STORY, .+/g, '');
+
 	for (let i in violations) {
 		obj = {};
-	
+	  
 		for (let j in permits) {
 			if (violations[i].bin == permits[j].bin__) {
-				obj.violationid = violations[i].violationid;
-				obj.inspectiondate = violations[i].inspectiondate;
-				obj.violation = violations[i].novdescription;
+				obj.violation_id = violations[i].violationid;
+				obj.violation = trimDescription(violations[i].novdescription);
+				obj.inspection_date = formatDate(violations[i].inspectiondate);
 				obj.bin = violations[i].bin;
 
-				if (obj.violationid !== lastViolationId) {
-					obj.filed = permits[j].filing_date;
-					obj.owner_business = permits[j].owner_s_business_name;
-					obj.owner_name = `${permits[j].owner_s_first_name} ${permits[j].owner_s_last_name}`;
-					obj.owner_address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}, ${permits[j].city}, ${permits[j].state}, ${permits[j].owner_s_zip_code}`;
-					obj.owner_phone = permits[j].owner_s_phone__;
+				if (obj.violation_id !== lastViolationId) {
+					obj.permit_date = formatDate(permits[j].filing_date);
+					obj.company = permits[j].owner_s_business_name;
+					obj.first_name = permits[j].owner_s_first_name;
+					obj.last_name = permits[j].owner_s_last_name;
+					obj.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
+					obj.city = permits[j].city;
+					obj.state = permits[j].state;
+					obj.zip = permits[j].owner_s_zip_code;
+					obj.phone = permits[j].owner_s_phone__;
 
 					violationsArr.push(obj);
-					lastViolationId = obj.violationid;
+					lastViolationId = obj.violation_id;
 				}
 			}
 		}
