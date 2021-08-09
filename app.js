@@ -13,7 +13,7 @@ const api = axios.setup({
 });
 
 async function main() {
-	const violationsNum = 500;
+	const violationsNum = 2000;
 	const violationsURL = "/mkgf-zjhb.json?$select=distinct%20violationid,inspectiondate,novdescription,bin&$order=violationid%20DESC&$limit=" + violationsNum;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
@@ -83,7 +83,7 @@ const app = express();
 app.get('/leads.csv', async (req, res) => {
 	try {
 		const response = await main();
-		res.header('Content-Type', 'text/plain').send(response);
+		res.header('Content-Type', 'text/csv').send(response);
 	}
 	catch (error) {
 		console.log(error);
