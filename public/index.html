@@ -2,59 +2,16 @@
 <html>
 <head>
     <title>Lead gen</title>
+	<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Inconsolata:500" rel="stylesheet">
+	<link href="style.css" rel="stylesheet">
 </head>
-<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" type="text/css">
-<link href="https://fonts.googleapis.com/css?family=Inconsolata:500" rel="stylesheet" type="text/css">
-<style>
-body {
-	font: 12pt 'Lato', sans-serif;
-	line-height: 1.5;
-}
-#output {
-	font: 9.5pt 'Inconsolata', monospace;
-	white-space: pre-wrap;
-	margin-top: 5pt;
-	padding: 8pt;
-	width: 42em;
-	max-width: 90vw;
-	display: inline-block;
-	box-sizing: border-box;
-	overflow-y: scroll;
-	height: 12em;
-	scroll-behavior: smooth;
-}
-#output, input {
-	border: 1px solid #ccc;
-	border-radius: 3px;
-	box-shadow: 0 0 0 1px rgb(89 105 128 / 6%), 0 1px 3px 0 rgb(89 105 128 / 6%), 0 1px 2px 0 rgb(0 0 0 / 3%);
-}
-input {
-	padding-left: 5pt;
-	width: 4em;
-	margin-right: 1em;
-}
-.button {
-	border-radius: 3px;
-	cursor: pointer;
-	text-decoration: none;
-	font-weight: bold;
-	font-size: 80%;
-	display: inline-block;
-	padding: 4pt 20pt;
-	background: #006deb;
-	color: white;
-}
-.refresh {
-	display: flex;
-	margin: 1em 18pt;
-}
-</style>
 <body>
 
 <div>This API exposes the following endpoints:</div>
 
 <ul>
-	<li>all.csv <a href="all.csv">view</a> | <a href="all.csv?action=download">download</a> ]</li>
+	<li>all.csv [ <a href="all.csv">view</a> | <a href="all.csv?action=download">download</a> ]</li>
 	<li>with-contact-info.csv [ <a href="with-contact-info.csv">view</a> | <a href="with-contact-info.csv?action=download">download</a> ]</li>
 	<li>without-contact-info.csv [ <a href="without-contact-info.csv">view</a> | <a href="without-contact-info.csv?action=download">download</a> ]</li>
 </ul>
@@ -68,27 +25,5 @@ input {
 </div>
 
 </body>
-<script>
-'use strict';
-
-const refreshLink = document.querySelector('a[href*="refresh"]');
-const limit = document.querySelector('input#limit');
-
-refreshLink.addEventListener('click', async (event) => {
-	event.preventDefault();
-
-	let output = document.querySelector('#output');
-	if (!output) {
-		output = document.createElement('div');
-		output.id = 'output';
-		document.body.appendChild(output);
-	}
-	
-	const response = await fetch(refreshLink.href + '?limit=' + limit.value);
-	const text = await response.text();
-	output.innerText = text;
-	output.scrollTop = output.scrollHeight;
-});
-
-</script>
+<script src="script.js"></script>
 </html>

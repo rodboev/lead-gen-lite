@@ -10,8 +10,11 @@
     "http": "^0.0.1-security"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node app",
+    "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "nodemonConfig": {
+    "ignore": ["public/*"]
   }
 }

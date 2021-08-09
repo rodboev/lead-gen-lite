@@ -1,0 +1,49 @@
+body {
+	font: 12pt 'Lato', sans-serif;
+	line-height: 1.5;
+}
+#output {
+	font: 9.5pt 'Inconsolata', monospace;
+	white-space: pre-wrap;
+	margin-top: 5pt;
+	padding: 8pt;
+	width: 42em;
+	max-width: 90vw;
+	display: inline-block;
+	box-sizing: border-box;
+	overflow-y: scroll;
+	height: 12em;
+	scroll-behavior: smooth;
+}
+#output, input {
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	box-shadow: 0 0 0 1px rgb(89 105 128 / 10%), 0 1px 3px 0 rgb(89 105 128 / 10%), 0 1px 2px 0 rgb(0 0 0 / 5%);
+}
+input {
+	padding-left: 5pt;
+	width: 4em;
+	margin-right: 1em;
+	outline: none;
+}
+input:focus {
+	border-color: #333;
+}
+.button {
+	border-radius: 3px;
+	cursor: pointer;
+	text-decoration: none;
+	font-weight: bold;
+	font-size: 80%;
+	display: inline-block;
+	padding: 4pt 20pt;
+	background: #296ecb;
+	color: white;
+}
+.button:hover {
+	background: #006deb;
+}
+.refresh {
+	display: flex;
+	margin: 1em 18pt;
+}
