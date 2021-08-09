@@ -6,7 +6,7 @@ const express = require('express');
 const getDate = () => new Date().toLocaleString('en-US');
 
 const redisClient = redis.createClient({
-	url: process.env.REDIS_URL || 'redis://localhost',
+	url: 'redis://localhost',
 })
 const redisStore = new axios.RedisStore(redisClient);
 const api = axios.setup({
@@ -20,12 +20,12 @@ const api = axios.setup({
 
 let logMessages = [];
 
-async function getResponse() {
+async function getResponse(res) {
 	const response = Object.create(null);
 	const violationsNum = 750;
 	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
 
-	logMessages.push(`[${getDate()}] Requesting ${violationsNum} violations...`);
+	res.write(`[${getDate()}] Requesting ${violationsNum} violations...\n`);
 	const violationsReq = await api.get(violationsURL);
 	response.violations = violationsReq.data;
 	
@@ -40,13 +40,13 @@ async function getResponse() {
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
 
-	logMessages.push(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
-	logMessages.push(`[${getDate()}] Requesting ${binSet.size} permits...`);
+	res.write(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...\n`);
+	res.write(`[${getDate()}] Requesting ${binSet.size} permits...\n`);
 	const permitsReq = await api.get(permitsURL);
 	response.permits = permitsReq.data;
 
 	const cacheLength = await api.cache.length();
-	logMessages.push(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
+	res.write(`[${getDate()}] Cached ${cacheLength} API results for future requests...\n`);
 
 	return response;
 }
@@ -56,8 +56,8 @@ const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 	.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 	.replace(/, \d+?.. STORY, .+/g, '');
 
-function parseResponse(response) {
-	let { violations, permits } = response;
+function parseData(responseData, res) {
+	let { violations, permits } = responseData;
 
 	const dataObj = {
 		all: [],
@@ -65,9 +65,6 @@ function parseResponse(response) {
 		withoutContacts: []
 	};
 
-	// Get all violations
-	
-	// violations = violations.filter(violation => permits.some(permit => violation.bin === permit.bin__));
 	for (let i in violations) {
 		let violation = Object.create(null);
 		violation.violation_date = formatDate(violations[i].inspectiondate);
@@ -95,9 +92,9 @@ function parseResponse(response) {
 		dataObj.all.push(violation);
 	}
 
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...`);
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...`);
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...`);
+	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...\n`);
+	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...\n`);
+	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...\n`);
 
 	return dataObj;
 }
@@ -110,15 +107,16 @@ const dataCsv = {
 };
 
 app.get('/refresh', async (req, res) => {
-	const response = await getResponse();
-	const results = parseResponse(response);
+	res.header("Content-Type", "text/plain");
+	const responseData = await getResponse(res);
+	const results = parseData(responseData, res);
+
 	dataCsv.all = await converter.json2csvAsync(results.all);
 	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
 	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
-	logMessages.push(`[${getDate()}] Data refreshed and converted to CSV.`);
-	logMessages.push(`[${getDate()}] ---`);
-	res.header("Content-Type", "text/plain");
-	res.send(logMessages.join("\n"));
+
+	res.write(`[${getDate()}] Data refreshed and converted to CSV.\n`);
+	res.end();
 });
 
 const csvHeader = action => ({

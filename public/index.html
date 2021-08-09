@@ -3,10 +3,22 @@
 <head>
     <title>Lead gen</title>
 </head>
+<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Inconsolata:500" rel="stylesheet" type="text/css">
 <style>
 body {
-	font: 12pt sans-serif;
+	font: 12pt 'Lato', sans-serif;
 	line-height: 1.5;
+}
+#output {
+	font: 10.5pt 'Inconsolata', monospace;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	white-space: pre-wrap;
+	margin: 1em 0;
+	box-shadow: 0 0 0 1px rgb(89 105 128 / 6%), 0 1px 3px 0 rgb(89 105 128 / 6%), 0 1px 2px 0 rgb(0 0 0 / 3%);
+	padding: 8pt 50pt 8pt 8pt;
+	display: inline-block;
 }
 </style>
 <body>
@@ -20,5 +32,29 @@ body {
 </ul>
 
 <div>If the data looks wrong you can <a href="refresh">force a refresh</a>.</div>
+
 </body>
+<script>
+'use strict';
+
+const refreshLink = document.querySelector('a[href*="refresh"]');
+
+refreshLink.addEventListener('click', async (event) => {
+	event.preventDefault();
+
+	let output = document.querySelector('#output');
+	if (!output) {
+		output = document.createElement('div');
+		output.id = 'output';
+		document.body.appendChild(output);
+	}
+	
+	output.innerText += 'Sending request to app...\n';
+	const response = await fetch(refreshLink.href);
+	const text = await response.text();
+	output.innerText += text;
+	
+});
+
+</script>
 </html>
