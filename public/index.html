@@ -11,14 +11,20 @@ body {
 	line-height: 1.5;
 }
 #output {
-	font: 10.5pt 'Inconsolata', monospace;
+	font: 9.5pt 'Inconsolata', monospace;
 	border: 1px solid #ccc;
 	border-radius: 3px;
 	white-space: pre-wrap;
 	margin: 1em 0;
 	box-shadow: 0 0 0 1px rgb(89 105 128 / 6%), 0 1px 3px 0 rgb(89 105 128 / 6%), 0 1px 2px 0 rgb(0 0 0 / 3%);
-	padding: 8pt 50pt 8pt 8pt;
+	padding: 8pt;
+	width: 42em;
+	max-width: 90vw;
 	display: inline-block;
+	box-sizing: border-box;
+	overflow-y: scroll;
+	height: 12em;
+	scroll-behavior: smooth;
 }
 </style>
 <body>
@@ -49,11 +55,10 @@ refreshLink.addEventListener('click', async (event) => {
 		document.body.appendChild(output);
 	}
 	
-	output.innerText += 'Sending request to app...\n';
 	const response = await fetch(refreshLink.href);
 	const text = await response.text();
-	output.innerText += text;
-	
+	output.innerText = text;
+	output.scrollTop = output.scrollHeight;
 });
 
 </script>

@@ -20,12 +20,12 @@ const api = axios.setup({
 
 let logMessages = [];
 
-async function getResponse(res) {
+async function getResponse() {
 	const response = Object.create(null);
 	const violationsNum = 750;
 	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
 
-	res.write(`[${getDate()}] Requesting ${violationsNum} violations...\n`);
+	logMessages.push(`[${getDate()}] Requesting ${violationsNum} violations...`);
 	const violationsReq = await api.get(violationsURL);
 	response.violations = violationsReq.data;
 	
@@ -40,13 +40,13 @@ async function getResponse(res) {
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
 
-	res.write(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...\n`);
-	res.write(`[${getDate()}] Requesting ${binSet.size} permits...\n`);
+	logMessages.push(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
+	logMessages.push(`[${getDate()}] Requesting ${binSet.size} permits...`);
 	const permitsReq = await api.get(permitsURL);
 	response.permits = permitsReq.data;
 
 	const cacheLength = await api.cache.length();
-	res.write(`[${getDate()}] Cached ${cacheLength} API results for future requests...\n`);
+	logMessages.push(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
 
 	return response;
 }
@@ -56,7 +56,7 @@ const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 	.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 	.replace(/, \d+?.. STORY, .+/g, '');
 
-function parseData(responseData, res) {
+function parseData(responseData) {
 	let { violations, permits } = responseData;
 
 	const dataObj = {
@@ -92,28 +92,33 @@ function parseData(responseData, res) {
 		dataObj.all.push(violation);
 	}
 
-	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...\n`);
-	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...\n`);
-	res.write(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...\n`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...`);
 
 	return dataObj;
 }
 
-const app = express();
-
 const dataCsv = Object.create(null);
 
-app.get('/refresh', async (req, res) => {
-	res.header("Content-Type", "text/plain");
-	const responseData = await getResponse(res);
-	const results = parseData(responseData, res);
+async function refreshData() {
+	const responseData = await getResponse();
+	const results = parseData(responseData);
 
 	dataCsv.all = await converter.json2csvAsync(results.all);
 	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
 	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
+	logMessages.push(`[${getDate()}] Data refreshed and converted to CSV.`);
+	logMessages.push(`---`);
+}
 
-	res.write(`[${getDate()}] Data refreshed and converted to CSV.\n`);
-	res.end();
+const app = express();
+
+app.get('/refresh', async (req, res) => {
+	res.header("Content-Type", "text/plain");
+	await refreshData();
+	res.send(logMessages.join("\n"));
+	console.log(logMessages.join("\n"));
 });
 
 const csvHeader = action => ({
@@ -142,9 +147,10 @@ app.get('/without-contact-info.csv', async (req, res) => {
 app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
-app.listen(port, () => {
+app.listen(port, async () => {
 	console.log(`[${getDate()}] App listening on port ${port}...`);
-	console.log()
+	await refreshData();
+	console.log(logMessages.join("\n"));
 });
 
 module.exports = app;
