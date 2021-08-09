@@ -9,7 +9,7 @@ const cache = axiosCacheAdapter.setupCache({ maxAge: 15 * 60 * 1000 });
 const api = axios.create({ adapter: cache.adapter });
   
 async function main() {
-	const violationsNum = 1000;
+	const violationsNum = 5000;
 	const violationsURL = "https://data.cityofnewyork.us/resource/mkgf-zjhb.json?$select=distinct%20violationid,inspectiondate,novdescription,bin&$order=violationid%20DESC&$limit=" + violationsNum;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
