@@ -19,7 +19,7 @@ const api = axios.setup({
 });
 
 async function main() {
-	const violationsNum = 2000;
+	const violationsNum = 750;
 	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
