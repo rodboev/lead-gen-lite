@@ -6,7 +6,7 @@ const express = require('express');
 const getDate = () => new Date().toLocaleString('en-US');
 
 const redisClient = redis.createClient({
-	url: 'redis://localhost',
+	url: process.env.REDIS_URL || 'redis://localhost',
 })
 const redisStore = new axios.RedisStore(redisClient);
 const api = axios.setup({
@@ -101,10 +101,7 @@ function parseData(responseData, res) {
 
 const app = express();
 
-const dataCsv = {
-	withContacts: [],
-	withoutContacts: []
-};
+const dataCsv = Object.create(null);
 
 app.get('/refresh', async (req, res) => {
 	res.header("Content-Type", "text/plain");
@@ -146,7 +143,8 @@ app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
 app.listen(port, () => {
-	console.log(`[${getDate()}] App listening on port ${port}...`)
+	console.log(`[${getDate()}] App listening on port ${port}...`);
+	console.log()
 });
 
 module.exports = app;
