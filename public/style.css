@@ -56,3 +56,6 @@ input:focus {
 	display: flex;
 	margin: 1em 18pt;
 }
+.links li div {
+	display: inline-block;
+}
