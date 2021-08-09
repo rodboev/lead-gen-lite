@@ -100,7 +100,7 @@ app.get('/leads.csv', async (req, res) => {
 	res.header('Content-Type', 'text/csv').send(response);
 });
 
-app.get('/leads.txt', async (req, res) => {
+app.get('/', async (req, res) => {
 	const response = await main();
 	res.header('Content-Type', 'text/plain').send(response);
 });
