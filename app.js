@@ -60,17 +60,47 @@ function parseResponse(response) {
 	const { violations, permits } = response;
 
 	const dataObj = {
+		all: [],
 		withContacts: [],
 		withoutContacts: []
 	};
 
-	let violation;
-	let violationId;
-	let lastViolationId;
+	// Get all violations
+	for (let i in violations) {
+		let violation = {};
+		let violationId;
+		let lastViolationId;
+	
+		for (let j in permits) {
+			violationId = violations[i].violationid;
+
+			if (violationId !== lastViolationId) {
+				violation.violation_date = formatDate(violations[i].inspectiondate);
+				violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
+				violation.description = trimDescription(violations[i].novdescription);
+				violation.bin = violations[i].bin;
+
+				violation.matching_bin = permits[j].bin__;
+				violation.company = permits[j].owner_s_business_name;
+				violation.first_name = permits[j].owner_s_first_name;
+				violation.last_name = permits[j].owner_s_last_name;
+				violation.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
+				violation.city = permits[j].city;
+				violation.state = permits[j].state;
+				violation.zip = permits[j].owner_s_zip_code;
+				violation.phone = permits[j].owner_s_phone__;
+
+				dataObj.all.push(violation);
+				lastViolationId = violationId;
+			}
+		}
+	}
 
 	// Check for violations with contact info
 	for (let i in violations) {
-		violation = {};
+		let violation = {};
+		let violationId;
+		let lastViolationId;
 
 		for (let j in permits) {
 			if (violations[i].bin == permits[j].bin__) {
@@ -103,9 +133,11 @@ function parseResponse(response) {
 
 	// Check for violations without contact info
 	// TODO: Need to fix this logic
-	// A violation without contact info has a BIN, but looking it up on Permits produces an empty dataset like this: []
+	// A violation without contact info has a BIN, but looking it up on Socrata's Permits API produces an empty dataset like this: []
 	for (let i in violations) {
-		violation = {};
+		let violation = {};
+		let violationId;
+		let lastViolationId;
 
 		for (let j in permits) {
 			if (violations[i].bin != permits[j].bin__) {
@@ -117,10 +149,7 @@ function parseResponse(response) {
 					violation.description = trimDescription(violations[i].novdescription);
 					violation.bin = violations[i].bin;
 
-					// violation.permit_date = formatDate(permits[j].filing_date);
 					violation.company = permits[j].owner_s_business_name;
-					if (!violation.company || violation.company === 'NA' || violation.company === 'N/A')
-						violation.company = '';
 					violation.first_name = permits[j].owner_s_first_name;
 					violation.last_name = permits[j].owner_s_last_name;
 					violation.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
@@ -129,15 +158,20 @@ function parseResponse(response) {
 					violation.zip = permits[j].owner_s_zip_code;
 					violation.phone = permits[j].owner_s_phone__;
 
-					dataObj.withoutContacts.push(violation);
+					if (i == Object.keys(violations).length - 1) {
+						console.log('Pushing violation without contacts');
+						dataObj.withoutContacts.push(violation);
+					}
+
 					lastViolationId = violationId;
 				}
 			}
 		}
 	}
 
-	logMessages.push(`[${getDate()}] Found ${Object.keys(dataObj.withContacts).length} violations with contact info...`);
-	logMessages.push(`[${getDate()}] Found ${Object.keys(dataObj.withoutContacts).length} violations without contact info...`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...`);
+	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...`);
 
 	return dataObj;
 }
@@ -152,6 +186,7 @@ const dataCsv = {
 app.get('/refresh', async (req, res) => {
 	const response = await getResponse();
 	const results = parseResponse(response);
+	dataCsv.all = await converter.json2csvAsync(results.all);
 	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
 	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
 	logMessages.push(`[${getDate()}] Data refreshed and converted to CSV.`);
@@ -160,17 +195,26 @@ app.get('/refresh', async (req, res) => {
 	res.send(logMessages.join("\n"));
 });
 
+const csvHeader = action => ({
+	"Content-Disposition": action === 'download' ? 'attachment' : 'inline',
+	"Content-Type": `text/${action === 'download' ? 'csv' : 'plain'}`
+});
+
+app.get('/all.csv', async (req, res) => {
+	const action = req.query.action;
+	res.set(csvHeader(action));
+	res.send(dataCsv.all);
+});
+
 app.get('/with-contact-info.csv', async (req, res) => {
 	const action = req.query.action;
-	res.header("Content-Disposition", `${action === 'download' ? 'attachment' : 'inline'};filename=with-contact-info.csv`);
-	res.header("Content-Type", `text/${action === 'download' ? 'csv' : 'plain'}`)
+	res.set(csvHeader(action));
 	res.send(dataCsv.withContacts);
 });
 
 app.get('/without-contact-info.csv', async (req, res) => {
 	const action = req.query.action;
-	res.header("Content-Disposition", `${action === 'download' ? 'attachment' : 'inline'};filename=without-contact-info.csv`);
-	res.header("Content-Type", `text/${action === 'download' ? 'csv' : 'plain'}`)
+	res.set(csvHeader(action));
 	res.send(dataCsv.withoutContacts);
 });
 
