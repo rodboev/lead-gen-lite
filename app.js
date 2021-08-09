@@ -84,7 +84,7 @@ async function main() {
 		}
 	}
 
-	console.log(`[${getDate()}] Returning ${Object.keys(violationsArr).length} records with matching BINs...`);
+	console.log(`[${getDate()}] Returning ${Object.keys(violationsArr).length} matching records...`);
 
 	const cacheLength = await api.cache.length();
 	console.log(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
@@ -95,15 +95,15 @@ async function main() {
 
 const app = express();
 
-app.get('/leads.csv', async (req, res) => {
+app.get('/with-contact-info.csv', async (req, res) => {
+	const action = req.query.action;
+	res.header("Content-Disposition", `${action === 'download' ? 'attachment' : 'inline'};filename=with-contact-info.csv`);
+	res.header("Content-Type", `text/${action === 'download' ? 'csv' : 'plain'}`)
 	const response = await main();
-	res.header('Content-Type', 'text/csv').send(response);
+	res.send(response);
 });
 
-app.get('/', async (req, res) => {
-	const response = await main();
-	res.header('Content-Type', 'text/plain').send(response);
-});
+app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
 app.listen(port, () => {
