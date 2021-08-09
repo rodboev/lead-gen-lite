@@ -39,13 +39,12 @@ async function getResponse(limit = 1000) {
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${limit * 10}`;
 
-	logMessages.push(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
-	logMessages.push(`[${getDate()}] Requesting ${binSet.size} permits...`);
+	logMessages.push(`[${getDate()}] Requesting ${binSet.size} unique permits...`);
 	const permitsReq = await api.get(permitsURL);
 	response.permits = permitsReq.data;
 
 	const cacheLength = await api.cache.length();
-	logMessages.push(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
+	// logMessages.push(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
 
 	return response;
 }
@@ -64,11 +63,24 @@ function parseData(responseData) {
 		withoutContacts: []
 	};
 
-	for (let i in violations) {
+	// Trim descriptions
+	for (let i = 0; i < violations.length; i++) {
+		violations[i].novdescription = trimDescription(violations[i].novdescription);
+	}
+
+	// Combine descriptions
+	for (let i = 0; i < violations.length; i++) {
+		if (violations[i - 1] && violations[i].housenumber === violations[i - 1].housenumber && violations[i].streetname === violations[i - 1].streetname && violations[i].apartment === violations[i - 1].apartment) {
+			violations[i - 1].novdescription += `, ${violations[i].novdescription}`;
+			violations.splice(i, 1);
+		}
+	}
+
+	for (let i = 0; i < violations.length; i++) {
 		let violation = Object.create(null);
 		violation.violation_date = formatDate(violations[i].inspectiondate);
-		violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-		violation.description = trimDescription(violations[i].novdescription);
+		violation.violation_where = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
+		violation.description = violations[i].novdescription;
 		violation.bin = violations[i].bin;
 
 		permit = permits.find(permit => violation.bin === permit.bin__);
@@ -91,9 +103,9 @@ function parseData(responseData) {
 		dataObj.all.push(violation);
 	}
 
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...`);
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withContacts).length} violations with contact info...`);
-	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.withoutContacts).length} violations without contact info...`);
+	logMessages.push(`[${getDate()}] Collected ${Object.keys(dataObj.all).length} violation addresses...`);
+	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} to PhoneBurner list...`);
+	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} to RocketReach list...`);
 
 	return dataObj;
 }
@@ -107,8 +119,7 @@ async function refreshData(limit = 1000) {
 	dataCsv.all = await converter.json2csvAsync(results.all);
 	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
 	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
-	logMessages.push(`[${getDate()}] Data refreshed and converted to CSV.`);
-	logMessages.push(`---`);
+	logMessages.push(`[${getDate()}] Done.`);
 }
 
 const app = express();
