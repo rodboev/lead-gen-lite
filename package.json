@@ -3,7 +3,8 @@
     "axios": "^0.21.1",
     "axios-cache-adapter": "^2.7.3",
     "express": "^4.17.1",
-    "json-2-csv": "^3.14.2"
+    "json-2-csv": "^3.14.2",
+    "redis": "^3.1.2"
   },
   "devDependencies": {
     "http": "^0.0.1-security"

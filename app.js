@@ -1,14 +1,20 @@
 const axios = require('axios-cache-adapter');
+const redis = require('redis');
 const converter = require('json-2-csv');
 const express = require('express');
 
 const getDate = () => new Date().toLocaleString('en-US');
 
+const redisClient = redis.createClient({
+	url: process.env.REDIS_URL || 'redis://localhost',
+})
+const redisStore = new axios.RedisStore(redisClient);
 const api = axios.setup({
 	baseURL: 'https://data.cityofnewyork.us/resource',
 	cache: {
 		maxAge: 15 * 60 * 1000, // 15 min
-		exclude: { query: false }
+		exclude: { query: false },
+		redisStore
 	}
 });
 
@@ -29,9 +35,9 @@ async function main() {
 	}
 
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
-	const permitsURL = `/ipu4-2q9a.json?$select=bin__,filing_date,owner_s_business_name,owner_s_first_name,owner_s_last_name,owner_s_house__,owner_s_house_street_name,city,state,owner_s_zip_code,owner_s_phone__&$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
 
-	console.log(`[${getDate()}] Filtered out ${numPermits - binSet.size} permits.`);
+	console.log(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
 	console.log(`[${getDate()}] Requesting ${binSet.size} permits...`);
 	const permitsReq = await api.get(permitsURL);
 	const permits = permitsReq.data;
@@ -50,18 +56,18 @@ async function main() {
 		obj = {};
 		
 		for (let j in permits) {
+			// TODO: push violations with BINs that don't have a matching permit BIN into a separate csv
 			if (violations[i].bin == permits[j].bin__) {
-				// obj.violation_id = violations[i].violationid;
 				violationId = violations[i].violationid;
 				obj.violation_date = formatDate(violations[i].inspectiondate);
 				obj.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-				obj.violation = trimDescription(violations[i].novdescription);
+				obj.description = trimDescription(violations[i].novdescription);
 				obj.bin = violations[i].bin;
 
 				if (violationId !== lastViolationId) {
 					// obj.permit_date = formatDate(permits[j].filing_date);
 					obj.company = permits[j].owner_s_business_name;
-					if (obj.company === '' || obj.company === 'NA' || obj.company === 'N/A')
+					if (!obj.company || obj.company === 'NA' || obj.company === 'N/A')
 						obj.company = '';
 					obj.first_name = permits[j].owner_s_first_name;
 					obj.last_name = permits[j].owner_s_last_name;
@@ -78,10 +84,11 @@ async function main() {
 		}
 	}
 
-	const cacheLength = await api.cache.length();
-	console.log(`[${getDate()}] Cached ${cacheLength} API requests.`);
+	console.log(`[${getDate()}] Returning ${Object.keys(violationsArr).length} records with matching BINs...`);
 
-	console.log(`[${getDate()}] Returned ${Object.keys(violationsArr).length} records.`);
+	const cacheLength = await api.cache.length();
+	console.log(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
+
 	const csvOutput =  await converter.json2csvAsync(violationsArr);
 	return csvOutput;
 }
