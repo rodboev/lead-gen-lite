@@ -21,7 +21,7 @@ const api = axios.setup({
 let logMessages = [];
 
 async function getResponse() {
-	const response = {};
+	const response = Object.create(null);
 	const violationsNum = 750;
 	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
 
@@ -57,7 +57,7 @@ const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 	.replace(/, \d+?.. STORY, .+/g, '');
 
 function parseResponse(response) {
-	const { violations, permits } = response;
+	let { violations, permits } = response;
 
 	const dataObj = {
 		all: [],
@@ -66,107 +66,33 @@ function parseResponse(response) {
 	};
 
 	// Get all violations
-	for (let i in violations) {
-		let violation = {};
-		let violationId;
-		let lastViolationId;
 	
-		for (let j in permits) {
-			violationId = violations[i].violationid;
-
-			if (violationId !== lastViolationId) {
-				violation.violation_date = formatDate(violations[i].inspectiondate);
-				violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-				violation.description = trimDescription(violations[i].novdescription);
-				violation.bin = violations[i].bin;
-
-				violation.matching_bin = permits[j].bin__;
-				violation.company = permits[j].owner_s_business_name;
-				violation.first_name = permits[j].owner_s_first_name;
-				violation.last_name = permits[j].owner_s_last_name;
-				violation.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
-				violation.city = permits[j].city;
-				violation.state = permits[j].state;
-				violation.zip = permits[j].owner_s_zip_code;
-				violation.phone = permits[j].owner_s_phone__;
-
-				dataObj.all.push(violation);
-				lastViolationId = violationId;
-			}
-		}
-	}
-
-	// Check for violations with contact info
+	// violations = violations.filter(violation => permits.some(permit => violation.bin === permit.bin__));
 	for (let i in violations) {
-		let violation = {};
-		let violationId;
-		let lastViolationId;
+		let violation = Object.create(null);
+		violation.violation_date = formatDate(violations[i].inspectiondate);
+		violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
+		violation.description = trimDescription(violations[i].novdescription);
+		violation.bin = violations[i].bin;
 
-		for (let j in permits) {
-			if (violations[i].bin == permits[j].bin__) {
-				violationId = violations[i].violationid;
-
-				if (violationId !== lastViolationId) {
-					violation.violation_date = formatDate(violations[i].inspectiondate);
-					violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-					violation.description = trimDescription(violations[i].novdescription);
-					violation.bin = violations[i].bin;
-
-					// violation.permit_date = formatDate(permits[j].filing_date);
-					violation.company = permits[j].owner_s_business_name;
-					if (!violation.company || violation.company === 'NA' || violation.company === 'N/A')
-						violation.company = '';
-					violation.first_name = permits[j].owner_s_first_name;
-					violation.last_name = permits[j].owner_s_last_name;
-					violation.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
-					violation.city = permits[j].city;
-					violation.state = permits[j].state;
-					violation.zip = permits[j].owner_s_zip_code;
-					violation.phone = permits[j].owner_s_phone__;
-
-					dataObj.withContacts.push(violation);
-					lastViolationId = violationId;
-				}
-			}
+		permit = permits.find(permit => violation.bin === permit.bin__);
+		if (permit) {
+			violation.company = permit.owner_s_business_name;
+			if (!violation.company || violation.company === 'NA' || violation.company === 'N/A')
+				violation.company = '';
+			violation.first_name = permit.owner_s_first_name;
+			violation.last_name = permit.owner_s_last_name;
+			violation.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
+			violation.city = permit.city;
+			violation.state = permit.state;
+			violation.zip = permit.owner_s_zip_code;
+			violation.phone = permit.owner_s_phone__;
+			dataObj.withContacts.push(violation);
 		}
-	}
-
-	// Check for violations without contact info
-	// TODO: Need to fix this logic
-	// A violation without contact info has a BIN, but looking it up on Socrata's Permits API produces an empty dataset like this: []
-	for (let i in violations) {
-		let violation = {};
-		let violationId;
-		let lastViolationId;
-
-		for (let j in permits) {
-			if (violations[i].bin != permits[j].bin__) {
-				violationId = violations[i].violationid;
-
-				if (violationId !== lastViolationId) {
-					violation.violation_date = formatDate(violations[i].inspectiondate);
-					violation.violation_address = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-					violation.description = trimDescription(violations[i].novdescription);
-					violation.bin = violations[i].bin;
-
-					violation.company = permits[j].owner_s_business_name;
-					violation.first_name = permits[j].owner_s_first_name;
-					violation.last_name = permits[j].owner_s_last_name;
-					violation.address = `${permits[j].owner_s_house__} ${permits[j].owner_s_house_street_name}`;
-					violation.city = permits[j].city;
-					violation.state = permits[j].state;
-					violation.zip = permits[j].owner_s_zip_code;
-					violation.phone = permits[j].owner_s_phone__;
-
-					if (i == Object.keys(violations).length - 1) {
-						console.log('Pushing violation without contacts');
-						dataObj.withoutContacts.push(violation);
-					}
-
-					lastViolationId = violationId;
-				}
-			}
+		else {
+			dataObj.withoutContacts.push(violation);
 		}
+		dataObj.all.push(violation);
 	}
 
 	logMessages.push(`[${getDate()}] Saving ${Object.keys(dataObj.all).length} total violations...`);
