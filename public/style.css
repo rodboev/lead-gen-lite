@@ -1,6 +1,15 @@
 body {
-	font: 12pt 'Lato', sans-serif;
+	font: 12pt sans-serif;
 	line-height: 1.5;
+}
+body, input {
+	color: #333;
+}
+a {
+	color: #3376d2;
+}
+a:hover:not('.button') {
+	color: #006deb;
 }
 #output {
 	font: 9.5pt 'Inconsolata', monospace;
@@ -21,6 +30,7 @@ body {
 	box-shadow: 0 0 0 1px rgb(89 105 128 / 10%), 0 1px 3px 0 rgb(89 105 128 / 10%), 0 1px 2px 0 rgb(0 0 0 / 5%);
 }
 input {
+	font: 10.5pt sans-serif;
 	padding-left: 5pt;
 	width: 4em;
 	margin-right: 1em;
@@ -33,11 +43,10 @@ input:focus {
 	border-radius: 3px;
 	cursor: pointer;
 	text-decoration: none;
-	font-weight: bold;
 	font-size: 80%;
 	display: inline-block;
 	padding: 4pt 20pt;
-	background: #296ecb;
+	background: #3376d2;
 	color: white;
 }
 .button:hover {

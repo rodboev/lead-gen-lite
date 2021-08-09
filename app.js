@@ -72,9 +72,9 @@ function parseData(responseData) {
 		violation.bin = violations[i].bin;
 
 		permit = permits.find(permit => violation.bin === permit.bin__);
-		if (permit) {
-			violation.company = permit.owner_s_business_name;
-			if (!violation.company || violation.company === 'NA' || violation.company === 'N/A')
+		if (permit && permit.owner_s_phone__) {
+			violation.company = permit.owner_s_business_name || '';
+			if (violation.company === 'NA' || violation.company === 'N/A')
 				violation.company = '';
 			violation.first_name = permit.owner_s_first_name;
 			violation.last_name = permit.owner_s_last_name;
