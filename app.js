@@ -20,12 +20,11 @@ const api = axios.setup({
 
 let logMessages = [];
 
-async function getResponse() {
+async function getResponse(limit = 1000) {
 	const response = Object.create(null);
-	const violationsNum = 750;
-	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
+	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + limit;
 
-	logMessages.push(`[${getDate()}] Requesting ${violationsNum} violations...`);
+	logMessages.push(`[${getDate()}] Requesting ${limit} violations...`);
 	const violationsReq = await api.get(violationsURL);
 	response.violations = violationsReq.data;
 	
@@ -38,7 +37,7 @@ async function getResponse() {
 	}
 
 	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
-	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${violationsNum * 10}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${limit * 10}`;
 
 	logMessages.push(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
 	logMessages.push(`[${getDate()}] Requesting ${binSet.size} permits...`);
@@ -101,8 +100,8 @@ function parseData(responseData) {
 
 const dataCsv = Object.create(null);
 
-async function refreshData() {
-	const responseData = await getResponse();
+async function refreshData(limit = 1000) {
+	const responseData = await getResponse(limit);
 	const results = parseData(responseData);
 
 	dataCsv.all = await converter.json2csvAsync(results.all);
@@ -115,8 +114,9 @@ async function refreshData() {
 const app = express();
 
 app.get('/refresh', async (req, res) => {
+	const limit = req.query.limit;
 	res.header("Content-Type", "text/plain");
-	await refreshData();
+	await refreshData(limit);
 	res.send(logMessages.join("\n"));
 	console.log(logMessages.join("\n"));
 });
