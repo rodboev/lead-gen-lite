@@ -18,19 +18,20 @@ const api = axios.setup({
 	}
 });
 
-async function main() {
+async function getResponse() {
+	const response = {};
 	const violationsNum = 750;
 	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsNum;
 
 	console.log(`[${getDate()}] Requesting ${violationsNum} violations...`);
 	const violationsReq = await api.get(violationsURL);
-	const violations = violationsReq.data;
+	response.violations = violationsReq.data;
 	
 	let binSet = new Set();
 	let numPermits = 0;
 
-	for (let i in violations) {
-		binSet.add(violations[i].bin);
+	for (let i in response.violations) {
+		binSet.add(response.violations[i].bin);
 		numPermits++;
 	}
 
@@ -40,8 +41,13 @@ async function main() {
 	console.log(`[${getDate()}] Filtering out ${numPermits - binSet.size} duplicate permits...`);
 	console.log(`[${getDate()}] Requesting ${binSet.size} permits...`);
 	const permitsReq = await api.get(permitsURL);
-	const permits = permitsReq.data;
+	response.permits = permitsReq.data;
+	
+	return response;
+}
 
+async function parseResults(response) {
+	const {violations, permits} = response;
 	let violationsArr = [];
 	let obj;
 	let violationId;
@@ -56,7 +62,7 @@ async function main() {
 		obj = {};
 		
 		for (let j in permits) {
-			// TODO: push violations with BINs that don't have a matching permit BIN into a separate csv
+			
 			if (violations[i].bin == permits[j].bin__) {
 				violationId = violations[i].violationid;
 				obj.violation_date = formatDate(violations[i].inspectiondate);
@@ -81,6 +87,10 @@ async function main() {
 					lastViolationId = violationId;
 				}
 			}
+			else {
+				// This violation's BIN doesn't have a matching permit
+				// TODO: Push it into a separate data set
+			}
 		}
 	}
 
@@ -99,8 +109,9 @@ app.get('/with-contact-info.csv', async (req, res) => {
 	const action = req.query.action;
 	res.header("Content-Disposition", `${action === 'download' ? 'attachment' : 'inline'};filename=with-contact-info.csv`);
 	res.header("Content-Type", `text/${action === 'download' ? 'csv' : 'plain'}`)
-	const response = await main();
-	res.send(response);
+	const response = await getResponse();
+	const results = await parseResults(response);
+	res.send(results);
 });
 
 app.use(express.static('public'));
