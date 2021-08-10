@@ -71,19 +71,17 @@ function parseData(responseData) {
 	// Combine descriptions
 	for (let i = 0; i < violations.length; i++) {
 		if (violations[i - 1] && violations[i].housenumber === violations[i - 1].housenumber && violations[i].streetname === violations[i - 1].streetname && violations[i].apartment === violations[i - 1].apartment) {
-			violations[i - 1].novdescription += `, ${violations[i].novdescription}`;
+			violations[i - 1].novdescription += ` AND ${violations[i].novdescription}`;
 			violations.splice(i, 1);
 		}
 	}
 
 	for (let i = 0; i < violations.length; i++) {
 		let violation = Object.create(null);
-		violation.violation_date = formatDate(violations[i].inspectiondate);
-		violation.violation_where = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].apartment || violations[i].story} ${violations[i].boro} ${violations[i].zip}`;
-		violation.description = violations[i].novdescription;
-		violation.bin = violations[i].bin;
-
-		permit = permits.find(permit => violation.bin === permit.bin__);
+		violation.date = formatDate(violations[i].inspectiondate);
+		violation.notes = `${violations[i].housenumber} ${violations[i].streetname} ${violations[i].boro} ${violations[i].zip} HAS ${violations[i].novdescription}`;
+		
+		permit = permits.find(permit => violations[i].bin === permit.bin__);
 		if (permit && permit.owner_s_phone__) {
 			violation.company = permit.owner_s_business_name || '';
 			if (violation.company === 'NA' || violation.company === 'N/A')
@@ -103,9 +101,9 @@ function parseData(responseData) {
 		dataObj.all.push(violation);
 	}
 
-	logMessages.push(`[${getDate()}] Collected ${Object.keys(dataObj.all).length} violation addresses...`);
-	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} to PhoneBurner list...`);
-	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} to RocketReach list...`);
+	logMessages.push(`[${getDate()}] Saved ${Object.keys(dataObj.all).length} violation addresses to all.csv...`);
+	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} of them to with-contacts.csv...`);
+	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} of them to without-contacts...`);
 
 	return dataObj;
 }
