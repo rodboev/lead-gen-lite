@@ -5,7 +5,8 @@ const io = require('socket.io')(http);
 
 const utils = require('./lib/utils');
 const eventEmitter = require('./lib/events');
-const dob = require('./sources/dob');
+const cityDOB = require('./sources/cityDOB');
+const city311 = require('./sources/city311');
 
 // Real-time logging
 const history = [];
@@ -20,8 +21,9 @@ io.on('connection', (socket) => {
 
 // App routes to handle requests
 app.get('/refresh', async (req, res) => {
-	const violationsMax = req.query.limit;
-	dob.refreshData(violationsMax);
+	const queryLimit = req.query.limit;
+	cityDOB.refreshData(queryLimit);
+	city311.refreshData(queryLimit);
 	res.end();
 });
 
@@ -34,7 +36,7 @@ app.get('/api/dob-:id', function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
 	console.log(`Requested ${req.params.id}, returning dataCsv.${utils.removeExt(utils.unhyphenate(req.params.id))}`);
-	res.send(dob.dataCsv[utils.removeExt(utils.unhyphenate(req.params.id))]);
+	res.send(cityDOB.dataCsv[utils.removeExt(utils.unhyphenate(req.params.id))]);
 });
 
 app.use(express.static('public'));
@@ -42,6 +44,6 @@ app.use(express.static('public'));
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
 	console.log(`[${utils.getDate()}] App listening on port ${port}...\n`);
-	await dob.refreshData();
+	cityDOB.refreshData();
+	city311.refreshData(500);
 });
-
