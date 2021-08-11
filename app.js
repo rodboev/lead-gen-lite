@@ -118,23 +118,23 @@ function processData(violations, permits) {
 		dataObj.all.push(violation);
 	}
 
-	eventEmitter.emit('logging', `[${getDate()}] Saved ${Object.keys(dataObj.all).length} violation addresses to all.csv...\n`);
-	eventEmitter.emit('logging', `[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} of them (${(Object.keys(dataObj.withContacts).length / Object.keys(dataObj.all).length * 100).toFixed(1)}%) to with-contacts.csv...\n`);
-	eventEmitter.emit('logging', `[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} of them to without-contacts.csv...\n`);
-
 	return dataObj;
 }
 
 const dataCsv = Object.create(null);
+const hyphenate = str => str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+const unhyphenate = str => str.replace(/-./g, letter => letter.substring(1).toUpperCase());
+const removeExt = str => str.split('.')[0];
 
 async function refreshData(violationsMax) {
 	const violations = await getViolations(violationsMax);
 	const permits = await getPermits(violations, violationsMax);
 	const results = processData(violations, permits);
 
-	dataCsv.all = await converter.json2csvAsync(results.all);
-	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
-	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
+	for (const [dataType, dataValue] of Object.entries(results)) {
+		eventEmitter.emit('logging', `[${getDate()}] Pushing ${Object.keys(dataValue).length} (${Math.round(Object.keys(dataValue).length / Object.keys(results.all).length * 100)}%) addresses to dob-${hyphenate(dataType)}.csv...\n`);
+		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
+	}
 
 	const cacheLength = await api.cache.length();
 	eventEmitter.emit('logging', `[${getDate()}] ${cacheLength} external API calls cached. Done.\n`);
@@ -152,22 +152,11 @@ const csvHeader = action => ({
 	"Content-Type": `text/${action === 'download' ? 'csv' : 'plain'}`
 });
 
-app.get('/all.csv', async (req, res) => {
+app.get('/api/dob-:id', function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
-	res.send(dataCsv.all);
-});
-
-app.get('/with-contact-info.csv', async (req, res) => {
-	const action = req.query.action;
-	res.set(csvHeader(action));
-	res.send(dataCsv.withContacts);
-});
-
-app.get('/without-contact-info.csv', async (req, res) => {
-	const action = req.query.action;
-	res.set(csvHeader(action));
-	res.send(dataCsv.withoutContacts);
+	console.log(`Requested ${req.params.id}, returning dataCsv.${removeExt(unhyphenate(req.params.id))}`);
+	res.send(dataCsv[removeExt(unhyphenate(req.params.id))]);
 });
 
 app.use(express.static('public'));

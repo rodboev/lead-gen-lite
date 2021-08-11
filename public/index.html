@@ -11,14 +11,14 @@
 <div>This API exposes the following endpoints:</div>
 
 <ul class="links">
-	<li>all.csv
-		<div> [ <a href="all.csv">view</a> | <a href="all.csv?action=download">download</a> ]</div>
+	<li>dob-all.csv
+		<div> [ <a href="/api/dob-all.csv">view</a> | <a href="/api/dob-all.csv?action=download">download</a> ]</div>
 	</li>
-	<li>with-contact-info.csv
-		<div>[ <a href="with-contact-info.csv">view</a> | <a href="with-contact-info.csv?action=download">download</a> ]</div>
+	<li>dob-with-contacts.csv
+		<div>[ <a href="/api/dob-with-contacts.csv">view</a> | <a href="/api/dob-with-contacts.csv?action=download">download</a> ]</div>
 	</li>
-	<li>without-contact-info.csv
-		<div>[ <a href="without-contact-info.csv">view</a> | <a href="without-contact-info.csv?action=download">download</a> ]</div>
+	<li>dob-without-contacts.csv
+		<div>[ <a href="/api/dob-without-contacts.csv">view</a> | <a href="/api/dob-without-contacts.csv?action=download">download</a> ]</div>
 	</li>
 </ul>
 
@@ -29,8 +29,6 @@
 		<a class="button" href="refresh">Request new data</span></a>
 	</div>
 </div>
-
-<div id="output"></div>
 
 <script src="https://cdn.socket.io/3.1.3/socket.io.min.js"></script>
 <script>var socket = io();</script>
