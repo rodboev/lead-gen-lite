@@ -2,19 +2,14 @@
 
 const refreshLink = document.querySelector('a[href*="refresh"]');
 const limit = document.querySelector('input#limit');
+const output = document.querySelector('#output');
 
-refreshLink.addEventListener('click', async (event) => {
-	event.preventDefault();
-
-	let output = document.querySelector('#output');
-	if (!output) {
-		output = document.createElement('div');
-		output.id = 'output';
-		document.body.appendChild(output);
-	}
-	
-	const response = await fetch(refreshLink.href + '?limit=' + limit.value);
-	const text = await response.text();
-	output.innerText = text;
+socket.on('log_message', function (msg) {
+	output.innerText += msg;
 	output.scrollTop = output.scrollHeight;
+});
+
+refreshLink.addEventListener('click', (event) => {
+	event.preventDefault();
+	fetch(refreshLink.href + '?limit=' + limit.value);
 });

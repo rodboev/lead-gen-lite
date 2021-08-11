@@ -2,8 +2,9 @@ const axios = require('axios-cache-adapter');
 const redis = require('redis');
 const converter = require('json-2-csv');
 const express = require('express');
-
-const getDate = () => new Date().toLocaleString('en-US');
+const app = express();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
 const redisClient = redis.createClient({
 	url: process.env.REDIS_URL || 'redis://localhost',
@@ -18,50 +19,34 @@ const api = axios.setup({
 	}
 });
 
-let logMessages = [];
+// Real-time logging
+const events = require('events');
+const eventEmitter = new events.EventEmitter();
+const history = [];
 
-async function getResponse(limit = 1000) {
-	const response = Object.create(null);
-	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + limit;
+eventEmitter.on('logging', function (message) {
+	history.push(message);
+	io.emit('log_message', message);
+});
+io.on('connection', (socket) => {
+	socket.emit('logging', history);
+	io.emit('log_message', history.join(''));
+});
 
-	logMessages.push(`[${getDate()}] Requesting ${limit} violations...`);
-	const violationsReq = await api.get(violationsURL);
-	response.violations = violationsReq.data;
-	
-	let binSet = new Set();
-	let numPermits = 0;
-
-	for (let i in response.violations) {
-		binSet.add(response.violations[i].bin);
-		numPermits++;
-	}
-
-	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
-	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${limit * 10}`;
-
-	logMessages.push(`[${getDate()}] Requesting ${binSet.size} unique permits...`);
-	const permitsReq = await api.get(permitsURL);
-	response.permits = permitsReq.data;
-
-	const cacheLength = await api.cache.length();
-	// logMessages.push(`[${getDate()}] Cached ${cacheLength} API results for future requests...`);
-
-	return response;
-}
-
+// Helper functions
+const getDate = () => new Date().toLocaleString('en-US');
 const formatDate = dateStr => new Date(dateStr).toISOString().substring(0,10);
 const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 	.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 	.replace(/, \d+?.. STORY, .+/g, '');
 
-function parseData(responseData) {
-	let { violations, permits } = responseData;
+// Prep violations array
+async function getViolations(violationsMax = 1000) {
+	const violationsURL = "/mkgf-zjhb.json?$order=inspectiondate%20DESC&$limit=" + violationsMax;
 
-	const dataObj = {
-		all: [],
-		withContacts: [],
-		withoutContacts: []
-	};
+	eventEmitter.emit('logging', `[${getDate()}] Requesting ${violationsMax} violations...\n`);
+	const violationsReq = await api.get(violationsURL);
+	const violations = violationsReq.data;
 
 	// Trim descriptions
 	for (let i = 0; i < violations.length; i++) {
@@ -76,6 +61,38 @@ function parseData(responseData) {
 		}
 	}
 
+	eventEmitter.emit('logging', `[${getDate()}] Combining descriptions for ${violationsMax - violations.length} violations...\n`);
+	return violations;
+}
+
+// Extract BINs from violations and request permits
+async function getPermits(violations, violationsMax = 1000) {
+	let binSet = new Set();
+	let numPermits = 0;
+
+	for (let i in violations) {
+		binSet.add(violations[i].bin);
+		numPermits++;
+	}
+
+	const binsToRequest = `(%27${Array.from(binSet).join("%27,%27")}%27)`;
+	const permitsURL = `/ipu4-2q9a.json?$where=bin__%20in${binsToRequest}&$limit=${violationsMax * 10}`;
+
+	eventEmitter.emit('logging', `[${getDate()}] Found ${binSet.size} unique BINs. Requesting permits...\n`);
+	const permitsReq = await api.get(permitsURL);
+	const permits = permitsReq.data;
+
+	return permits;
+}
+
+// Push data into separate categories
+function processData(violations, permits) {
+	const dataObj = {
+		all: [],
+		withContacts: [],
+		withoutContacts: []
+	};
+	
 	for (let i = 0; i < violations.length; i++) {
 		let violation = Object.create(null);
 		violation.date = formatDate(violations[i].inspectiondate);
@@ -101,33 +118,33 @@ function parseData(responseData) {
 		dataObj.all.push(violation);
 	}
 
-	logMessages.push(`[${getDate()}] Saved ${Object.keys(dataObj.all).length} violation addresses to all.csv...`);
-	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} of them to with-contacts.csv...`);
-	logMessages.push(`[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} of them to without-contacts...`);
+	eventEmitter.emit('logging', `[${getDate()}] Saved ${Object.keys(dataObj.all).length} violation addresses to all.csv...\n`);
+	eventEmitter.emit('logging', `[${getDate()}] Pushing ${Object.keys(dataObj.withContacts).length} of them (${(Object.keys(dataObj.withContacts).length / Object.keys(dataObj.all).length * 100).toFixed(1)}%) to with-contacts.csv...\n`);
+	eventEmitter.emit('logging', `[${getDate()}] Pushing ${Object.keys(dataObj.withoutContacts).length} of them to without-contacts.csv...\n`);
 
 	return dataObj;
 }
 
 const dataCsv = Object.create(null);
 
-async function refreshData(limit = 1000) {
-	const responseData = await getResponse(limit);
-	const results = parseData(responseData);
+async function refreshData(violationsMax) {
+	const violations = await getViolations(violationsMax);
+	const permits = await getPermits(violations, violationsMax);
+	const results = processData(violations, permits);
 
 	dataCsv.all = await converter.json2csvAsync(results.all);
 	dataCsv.withContacts = await converter.json2csvAsync(results.withContacts);
 	dataCsv.withoutContacts = await converter.json2csvAsync(results.withoutContacts);
-	logMessages.push(`[${getDate()}] Done.`);
+
+	const cacheLength = await api.cache.length();
+	eventEmitter.emit('logging', `[${getDate()}] ${cacheLength} external API calls cached. Done.\n`);
 }
 
-const app = express();
-
+// App routes to handle requests
 app.get('/refresh', async (req, res) => {
-	const limit = req.query.limit;
-	res.header("Content-Type", "text/plain");
-	await refreshData(limit);
-	res.send(logMessages.join("\n"));
-	console.log(logMessages.join("\n"));
+	const violationsMax = req.query.limit;
+	await refreshData(violationsMax);
+	res.end();
 });
 
 const csvHeader = action => ({
@@ -156,10 +173,9 @@ app.get('/without-contact-info.csv', async (req, res) => {
 app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
-app.listen(port, async () => {
-	console.log(`[${getDate()}] App listening on port ${port}...`);
+http.listen(port, async () => {
+	console.log(`[${getDate()}] App listening on port ${port}...\n`);
 	await refreshData();
-	console.log(logMessages.join("\n"));
 });
 
 module.exports = app;

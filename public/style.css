@@ -23,6 +23,7 @@ a:hover:not('.button') {
 	overflow-y: scroll;
 	height: 12em;
 	scroll-behavior: smooth;
+	background: white;
 }
 #output, input {
 	border: 1px solid #ccc;
