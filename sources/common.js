@@ -15,13 +15,15 @@ async function getRecords(queryURL, queryLimit = 1000, dataSource = '') {
 		records = recordsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) ${err.message}\n`);
 	}
 
 	return records;
 }
 
 async function convertToCSV(results, dataSource = '') {
+	if (!results) eventEmitter.emit('logging', `[ERROR] Nothing to convert to CSV.`);
+
 	let totalCount = 0;
 	for (const dataValue of Object.values(results)) {
 		totalCount += dataValue.length;
@@ -41,4 +43,35 @@ async function convertToCSV(results, dataSource = '') {
 	return dataCsv;
 }
 
-module.exports = { getRecords, convertToCSV };
+function dedupePermits(permits, dataSource = '') {
+	if (!permits) eventEmitter.emit('logging', `[ERROR] No records to process.`);
+
+	let uniquePermits = [];
+	for (let i = 0; i < permits.length; i++) {
+		const permitExists = uniquePermits.some(uniquePermit => uniquePermit.bin__ === permits[i].bin__);
+		if (!permitExists) {
+			uniquePermits.push(permits[i])
+		}
+	}
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Filtering ${permits.length} permits down to ${uniquePermits.length} uniques...\n`);
+
+	return uniquePermits;
+}
+
+async function getPermitsByURL(permitsURL, dataSource = '') {
+	let permits = [];
+
+	try {
+		const permitsReq = await api.get(permitsURL);
+		permits = permitsReq.data;
+	}
+	catch (err) {
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) ${err.message}\n`);
+	}
+
+	// permits = dedupePermits(permits, dataSource);
+
+	return permits;
+}
+
+module.exports = { getRecords, convertToCSV, getPermitsByURL };

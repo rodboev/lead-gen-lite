@@ -5,19 +5,20 @@ const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
 const common = require('./common.js');
 
-function cleanData(records) {
-	const originalLength = records.length;
+const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
 
+function cleanData(records) {
+	// Trim descriptions
 	const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 		.replace(/, \d+?.. STORY, .+/g, '');
 
-	// Trim descriptions
 	for (let i = 0; i < records.length; i++) {
 		records[i].novdescription = trimDescription(records[i].novdescription);
 	}
 
 	// Combine descriptions
+	const originalLength = records.length;
 	for (let i = 0; i < records.length; i++) {
 		if (records[i - 1] && records[i].housenumber === records[i - 1].housenumber && records[i].streetname === records[i - 1].streetname && records[i].apartment === records[i - 1].apartment) {
 			records[i - 1].novdescription += ` AND ${records[i].novdescription}`;
@@ -25,43 +26,35 @@ function cleanData(records) {
 		}
 	}
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Combining descriptions for ${originalLength - records.length} DOB violations...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${originalLength - records.length} violation descriptions...\n`);
 	return records;
 }
 
-// Extract BINs from DOB violations and request permits
+// Extract BINs and request permits
 async function getPermits(records, queryLimit = 1000) {
-	let bins = new Set();
-	let numPermits = 0;
+	let uniqueBINs = new Set();
 
 	for (let i = 0; i < records.length; i++) {
-		bins.add(records[i].bin);
-		numPermits++;
+		uniqueBINs.add(records[i].bin);
 	}
 
-	const requestString = `('${Array.from(bins).join("','")}')`;
+	// Build request string and query Socrata API
+	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${queryLimit * 10}`;
-
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Found ${bins.size} unique BINs. Requesting permits...`);
-	let permits = [];
-	try {
-		const permitsReq = await api.get(permitsURL);
-		permits = permitsReq.data;
-	}
-	catch (err) {
-		eventEmitter.emit('logging', ` ${err.message}\n`);
-	}
-	eventEmitter.emit('logging', ` Received ${permits.length}.\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting ${uniqueBINs.size} permits by unique BIN...\n`);
+	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
 	return permits;
 }
 
 // Push data into separate categories
-function processData(records, permits) {
+function applyPermits(records, permits) {
 	const dataObj = {
 		withContacts: [],
 		withoutContacts: []
 	};
+
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} violations...\n`);
 
 	for (let i = 0; i < records.length; i++) {
 		let record = Object.create(null);
@@ -90,21 +83,19 @@ function processData(records, permits) {
 	return dataObj;
 }
 
-let dataCsv;
+let data;
 
 async function refreshData(queryLimit) {
-	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
-	let records = await common.getRecords('/mkgf-zjhb.json?$order=inspectiondate DESC', queryLimit, moduleName);
+	const recordsURL = '/mkgf-zjhb.json?$order=inspectiondate DESC';
+	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
-	const results = processData(records, permits);
-	const csvData = await common.convertToCSV(results, moduleName);
-	dataCsv = csvData;
-	return csvData;
+	const results = applyPermits(records, permits);
+	data = await common.convertToCSV(results, moduleName);
 }
 
 function getData(dataType) {
-	return dataCsv[dataType];
+	return data[dataType];
 }
 
 module.exports = { refreshData, getData };

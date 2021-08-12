@@ -45,18 +45,18 @@ async function emitCacheStatus() {
 	eventEmitter.emit('logging', `[${utils.getDate()}] ${cacheLength} external API calls cached. Done.\n`);
 }
 
-app.get('/api/dob-:id', function(req , res){
+app.get('/api/dob-:id', async function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
-	console.log(`Requested ${req.params.id}, returning dataCsv.${utils.removeExt(utils.unhyphenate(req.params.id))}`);
-	res.send(cityDOB.getData(utils.removeExt(utils.unhyphenate(req.params.id))));
+	const data = cityDOB.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
+	res.send(data);
 });
 
-app.get('/api/311-:id', function(req , res){
+app.get('/api/311-:id', async function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
-	console.log(`Requested ${req.params.id}, returning dataCsv.${utils.removeExt(utils.unhyphenate(req.params.id))}`);
-	res.send(city311.getData(utils.removeExt(utils.unhyphenate(req.params.id))));
+	const data = city311.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
+	res.send(data);
 });
 
 app.use(express.static('public'));

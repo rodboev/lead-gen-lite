@@ -5,9 +5,9 @@ const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
 const common = require('./common.js');
 
-function cleanData(records) {
-	if (!records) return;
+const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
 
+function cleanData(records) {
 	// Trim extra spaces from addresses
 	for (let i = 0; i < records.length; i++) {
 		records[i].incident_address = utils.trimWhitespace(records[i].incident_address);
@@ -21,17 +21,15 @@ function cleanData(records) {
 
 // Extract addresses and request permits
 async function getPermits(records, queryLimit = 800) {
-	let addresses = new Set();
-	let numPermits = 0;
+	let uniqueAddresses = new Set();
 
 	for (let i = 0; i < records.length; i++) {
-		addresses.add(records[i].incident_address);
-		numPermits++;
+		uniqueAddresses.add(records[i].incident_address);
 	}
 
 	// Split address string into street number and name
 	const addressesSep = [];
-	for (const address of addresses) {
+	for (const address of uniqueAddresses) {
 		let newAddress = {};
 		let [beforeSpace, ...afterSpace] = address.split(" ");
 		afterSpace = afterSpace.join(" ");
@@ -40,6 +38,7 @@ async function getPermits(records, queryLimit = 800) {
 		addressesSep.push(newAddress);
 	}
 
+	// Build request string for Socrata API query
 	let requestString = '';
 	const prefix = `(house__ in('`;
 	const middle = `') AND street_name in('`;
@@ -50,26 +49,21 @@ async function getPermits(records, queryLimit = 800) {
 			requestString += ' OR ';
 		}
 	}
-
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Found ${addresses.size} addresses. Requesting permits...`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting ${uniqueAddresses.size} permits by unique address...\n`);
+
 	// console.log('Requesting: ' + permitsURL);
-	let permits = [];
-	try {
-		const permitsReq = await api.get(permitsURL);
-		permits = permitsReq.data;
-	}
-	catch (err) {
-		eventEmitter.emit('logging', ` ${err.message}\n`);
-	}
-	eventEmitter.emit('logging', ` Received ${permits.length}.\n`);
+	// TODO: Check permitsURL.length and figure out when Socrata throws a 404
+	// TODO: Then batch into sets of less than that string length
+
+	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
 	return permits;
 }
 
 // Push data into separate categories
-function processData(records, permits) {
+function applyPermits(records, permits) {
 	const dataObj = {
 		withContacts: [],
 		withoutContacts: []
@@ -112,21 +106,19 @@ function processData(records, permits) {
 	return dataObj;
 }
 
-let dataCsv;
+let dataCsv = Object.create(null);
 
 async function refreshData(queryLimit = 800) {
-	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
-let records = await common.getRecords("/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC", queryLimit, moduleName);
+	const recordsURL = "/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC";
+	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
-	const results = processData(records, permits);
-	const csvData = await common.convertToCSV(results, moduleName);
-	dataCsv = csvData;
-	return csvData;
+	const results = applyPermits(records, permits);
+	data = await common.convertToCSV(results, moduleName);
 }
 
 function getData(dataType) {
-	return dataCsv[dataType];
+	return data[dataType];
 }
 
 module.exports = { refreshData, getData };
