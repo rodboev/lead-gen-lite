@@ -1,24 +1,10 @@
-
-const converter = require('json-2-csv');
-
 const api = require('../lib/api');
 const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
+const common = require('./common.js');
 
-// Prep 311 requests array
-async function getRecords(queryLimit = 800) {
-	const recordsURL = "/erm2-nwe9.json?$where=descriptor%20in(%27PESTS%27)%20OR%20complaint_type%20=%20%27Rodent%27&$order=created_date%20DESC&$limit=" + queryLimit;
-
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Requesting ${queryLimit} 311 records...`);
-	let records;
-	try {
-		const recordsReq = await api.get(recordsURL);
-		records = recordsReq.data;
-	}
-	catch (err) {
-		eventEmitter.emit('logging', ` error: ${err.response}\n`);
-	}
-	eventEmitter.emit('logging', ` received.\n`);
+function cleanData(records) {
+	if (!records) return;
 
 	// Trim extra spaces from addresses
 	for (let i = 0; i < records.length; i++) {
@@ -27,8 +13,7 @@ async function getRecords(queryLimit = 800) {
 
 	// TODO: Match extra spaces in permits later using like:
 	// https://dev.socrata.com/docs/functions/like.html
-	// Sometimes there are multiple spaces after "EAST" or "WEST" in permits
-
+	// Sometimes there are multiple spaces after "EAST" or "WEST" in permit
 	return records;
 }
 
@@ -74,9 +59,9 @@ async function getPermits(records, queryLimit = 800) {
 		permits = permitsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+		eventEmitter.emit('logging', ` ${err.message}\n`);
 	}
-	eventEmitter.emit('logging', ` received ${permits.length}.\n`);
+	eventEmitter.emit('logging', ` Received ${permits.length}.\n`);
 
 	return permits;
 }
@@ -127,23 +112,13 @@ function processData(records, permits) {
 
 const dataCsv = Object.create(null);
 
-async function refreshData(queryLimit) {
-	const records = await getRecords(queryLimit);
+async function refreshData(queryLimit = 800) {
+	let records = await common.getRecords("/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC", queryLimit, 'DOB');
+	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
-
-	let totalCount = 0;
-	for (const dataValue of Object.values(results)) {
-		totalCount += dataValue.length;
-	}
-
-	for (const [dataType, dataValue] of Object.entries(results)) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (311) Pushing ${Object.keys(dataValue).length} leads (${Math.round(Object.keys(dataValue).length / totalCount * 100)}%) to 311-${utils.hyphenate(dataType)}.csv...\n`);
-		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
-	}
-
-	const cacheLength = await api.cache.length();
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) ${cacheLength} external API calls cached. Done.\n`);
+	const csvData = await common.convertToCSV(results, 'DOB');
+	return csvData;
 }
 
-module.exports = { getRecords, getPermits, processData, refreshData, dataCsv };
+module.exports = { refreshData };

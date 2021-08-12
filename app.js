@@ -3,6 +3,7 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
+const api = require('./lib/api');
 const utils = require('./lib/utils');
 const eventEmitter = require('./lib/events');
 const cityDOB = require('./sources/cityDOB');
@@ -23,12 +24,14 @@ io.on('connection', (socket) => {
 app.get('/refresh/dob', async (req, res) => {
 	const queryLimit = req.query.limit;
 	cityDOB.refreshData(queryLimit);
+	await emitCacheStatus();
 	res.end();
 });
 
 app.get('/refresh/311', async (req, res) => {
 	const queryLimit = req.query.limit;
 	city311.refreshData(queryLimit);
+	await emitCacheStatus();
 	res.end();
 });
 
@@ -36,6 +39,11 @@ const csvHeader = action => ({
 	"Content-Disposition": action === 'download' ? 'attachment' : 'inline',
 	"Content-Type": `text/${action === 'download' ? 'csv' : 'plain'}`
 });
+
+async function emitCacheStatus() {
+	const cacheLength = await api.cache.length();
+	eventEmitter.emit('logging', `[${utils.getDate()}] ${cacheLength} external API calls cached. Done.\n`);
+}
 
 app.get('/api/dob-:id', function(req , res){
 	const action = req.query.action;
@@ -56,6 +64,8 @@ app.use(express.static('public'));
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
 	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
+
 	await cityDOB.refreshData();
 	await city311.refreshData();
+	await emitCacheStatus();
 });

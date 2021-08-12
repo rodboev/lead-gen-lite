@@ -1,24 +1,10 @@
-
-const converter = require('json-2-csv');
-
 const api = require('../lib/api');
 const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
+const common = require('./common.js');
 
-// Prep violations array
-async function getViolations(queryLimit = 1000) {
-	const recordsURL = "/mkgf-zjhb.json?$order=inspectiondate DESC&$limit=" + queryLimit;
-
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Requesting ${queryLimit} DOB violations...`);
-	let records;
-	try {
-		const recordsReq = await api.get(recordsURL);
-		records = recordsReq.data;
-	}
-	catch (err) {
-		eventEmitter.emit('logging', ` error: ${err.response}\n`);
-	}
-	eventEmitter.emit('logging', ` received.\n`);
+function cleanData(records) {
+	const originalLength = records.length;
 
 	const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
@@ -37,7 +23,7 @@ async function getViolations(queryLimit = 1000) {
 		}
 	}
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Combining descriptions for ${queryLimit - records.length} DOB violations...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Combining descriptions for ${originalLength - records.length} DOB violations...\n`);
 	return records;
 }
 
@@ -61,9 +47,9 @@ async function getPermits(records, queryLimit = 1000) {
 		permits = permitsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+		eventEmitter.emit('logging', ` ${err.message}\n`);
 	}
-	eventEmitter.emit('logging', ` received ${permits.length}.\n`);
+	eventEmitter.emit('logging', ` Received ${permits.length}.\n`);
 
 	return permits;
 }
@@ -102,25 +88,13 @@ function processData(records, permits) {
 	return dataObj;
 }
 
-const dataCsv = Object.create(null);
-
 async function refreshData(queryLimit) {
-	const records = await getViolations(queryLimit);
+	let records = await common.getRecords('/mkgf-zjhb.json?$order=inspectiondate DESC', queryLimit, '311');
+	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
-
-	let totalCount = 0;
-	for (const dataValue of Object.values(results)) {
-		totalCount += dataValue.length;
-	}
-
-	for (const [dataType, dataValue] of Object.entries(results)) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Pushing ${Object.keys(dataValue).length} leads (${Math.round(Object.keys(dataValue).length / totalCount * 100)}%) to dob-${utils.hyphenate(dataType)}.csv...\n`);
-		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
-	}
-
-	const cacheLength = await api.cache.length();
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) ${cacheLength} external API calls cached. Done.\n`);
+	const csvData = await common.convertToCSV(results, 'DOB');
+	return csvData;
 }
 
-module.exports = { getViolations, getPermits, processData, refreshData, dataCsv };
+module.exports = { refreshData };
