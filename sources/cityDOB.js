@@ -63,41 +63,39 @@ async function getPermits(records, queryLimit = 1000) {
 	catch (err) {
 		eventEmitter.emit('logging', ` error: ${err.response}\n`);
 	}
-	eventEmitter.emit('logging', ` received.\n`);
+	eventEmitter.emit('logging', ` received ${permits.length}.\n`);
 
 	return permits;
 }
 
 // Push data into separate categories
 function processData(records, permits) {
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Received ${permits.length} permits. Filtering and applying...\n`);
-
 	const dataObj = {
 		withContacts: [],
 		withoutContacts: []
 	};
 
 	for (let i = 0; i < records.length; i++) {
-		let violation = Object.create(null);
-		violation.date = utils.formatDate(records[i].inspectiondate);
-		violation.notes = `${records[i].housenumber} ${records[i].streetname} ${records[i].boro} ${records[i].zip} HAS ${records[i].novdescription}`;
-		
+		let record = Object.create(null);
+		record.date = utils.formatDate(records[i].inspectiondate);
+		record.notes = `${records[i].housenumber} ${records[i].streetname} ${records[i].boro} ${records[i].zip} HAS ${records[i].novdescription}`;
+	
 		permit = permits.find(permit => records[i].bin === permit.bin__);
 		if (permit && permit.owner_s_phone__) {
-			violation.company = permit.owner_s_business_name || '';
-			if (violation.company === 'NA' || violation.company === 'N/A')
-				violation.company = '';
-			violation.first_name = permit.owner_s_first_name;
-			violation.last_name = permit.owner_s_last_name;
-			violation.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
-			violation.city = permit.city;
-			violation.state = permit.state;
-			violation.zip = permit.owner_s_zip_code;
-			violation.phone = permit.owner_s_phone__;
-			dataObj.withContacts.push(violation);
+			record.company = permit.owner_s_business_name || '';
+			if (record.company === 'NA' || record.company === 'N/A')
+				record.company = '';
+			record.first_name = permit.owner_s_first_name;
+			record.last_name = permit.owner_s_last_name;
+			record.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
+			record.city = permit.city;
+			record.state = permit.state;
+			record.zip = permit.owner_s_zip_code;
+			record.phone = permit.owner_s_phone__;
+			dataObj.withContacts.push(record);
 		}
 		else {
-			dataObj.withoutContacts.push(violation);
+			dataObj.withoutContacts.push(record);
 		}
 	}
 
@@ -117,7 +115,7 @@ async function refreshData(queryLimit) {
 	}
 
 	for (const [dataType, dataValue] of Object.entries(results)) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Pushing ${Object.keys(dataValue).length} addresses (${Math.round(Object.keys(dataValue).length / totalCount * 100)}%) to dob-${utils.hyphenate(dataType)}.csv...\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Pushing ${Object.keys(dataValue).length} leads (${Math.round(Object.keys(dataValue).length / totalCount * 100)}%) to dob-${utils.hyphenate(dataType)}.csv...\n`);
 		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
 	}
 

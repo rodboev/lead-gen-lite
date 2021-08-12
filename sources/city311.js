@@ -44,7 +44,6 @@ async function getPermits(records, queryLimit = 800) {
 
 	// Split address string into street number and name
 	const addressesSep = [];
-
 	for (const address of addresses) {
 		let newAddress = {};
 		let [beforeSpace, ...afterSpace] = address.split(" ");
@@ -77,14 +76,53 @@ async function getPermits(records, queryLimit = 800) {
 	catch (err) {
 		eventEmitter.emit('logging', ` error: ${err.response}\n`);
 	}
-	eventEmitter.emit('logging', ` received.\n`);
+	eventEmitter.emit('logging', ` received ${permits.length}.\n`);
 
 	return permits;
 }
 
 // Push data into separate categories
 function processData(records, permits) {
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Received ${permits.length} permits for 311 records...\n`);
+	const dataObj = {
+		withContacts: [],
+		withoutContacts: []
+	};
+
+	// Split address string into street number and name
+	// TODO: Deduplicate this code with addressesSep above
+	for (const record of records) {
+		let newAddress = {};
+		let [beforeSpace, ...afterSpace] = record.incident_address.split(" ");
+		afterSpace = afterSpace.join(" ");
+		record.houseNumber = beforeSpace;
+		record.streetName = afterSpace;
+	}
+
+	for (let i = 0; i < records.length; i++) {
+		let record = Object.create(null);
+		record.date = utils.formatDate(records[i].created_date);
+		record.notes = `${records[i].incident_address} ${records[i].borough} ${records[i].incident_zip} HAS ${records[i].complaint_type.toUpperCase()}: ${records[i].descriptor.toUpperCase()}`;
+
+		permit = permits.find(permit => records[i].houseNumber === permit.owner_s_house__ && records[i].streetName === permit.owner_s_house_street_name);
+		if (permit && permit.owner_s_phone__) {
+			record.company = permit.owner_s_business_name || '';
+			if (record.company === 'NA' || record.company === 'N/A')
+				record.company = '';
+			record.first_name = permit.owner_s_first_name;
+			record.last_name = permit.owner_s_last_name;
+			record.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
+			record.city = permit.city;
+			record.state = permit.state;
+			record.zip = permit.owner_s_zip_code;
+			record.phone = permit.owner_s_phone__;
+			dataObj.withContacts.push(record);
+		}
+		else {
+			dataObj.withoutContacts.push(record);
+		}
+	}
+
+	return dataObj;
 }
 
 const dataCsv = Object.create(null);
@@ -93,6 +131,16 @@ async function refreshData(queryLimit) {
 	const records = await getRecords(queryLimit);
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
+
+	let totalCount = 0;
+	for (const dataValue of Object.values(results)) {
+		totalCount += dataValue.length;
+	}
+
+	for (const [dataType, dataValue] of Object.entries(results)) {
+		eventEmitter.emit('logging', `[${utils.getDate()}] (311) Pushing ${Object.keys(dataValue).length} leads (${Math.round(Object.keys(dataValue).length / totalCount * 100)}%) to 311-${utils.hyphenate(dataType)}.csv...\n`);
+		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
+	}
 
 	const cacheLength = await api.cache.length();
 	eventEmitter.emit('logging', `[${utils.getDate()}] (311) ${cacheLength} external API calls cached. Done.\n`);

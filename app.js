@@ -44,6 +44,13 @@ app.get('/api/dob-:id', function(req , res){
 	res.send(cityDOB.dataCsv[utils.removeExt(utils.unhyphenate(req.params.id))]);
 });
 
+app.get('/api/311-:id', function(req , res){
+	const action = req.query.action;
+	res.set(csvHeader(action));
+	console.log(`Requested ${req.params.id}, returning dataCsv.${utils.removeExt(utils.unhyphenate(req.params.id))}`);
+	res.send(city311.dataCsv[utils.removeExt(utils.unhyphenate(req.params.id))]);
+});
+
 app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
