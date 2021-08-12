@@ -6,12 +6,19 @@ const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
 
 // Prep 311 requests array
-async function getRecords(queryLimit = 1000) {
+async function getRecords(queryLimit = 800) {
 	const recordsURL = "/erm2-nwe9.json?$where=descriptor%20in(%27PESTS%27)%20OR%20complaint_type%20=%20%27Rodent%27&$order=created_date%20DESC&$limit=" + queryLimit;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Requesting ${queryLimit} 311 records...\n`);
-	const recordsReq = await api.get(recordsURL);
-	const records = recordsReq.data;
+	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Requesting ${queryLimit} 311 records...`);
+	let records;
+	try {
+		const recordsReq = await api.get(recordsURL);
+		records = recordsReq.data;
+	}
+	catch (err) {
+		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+	}
+	eventEmitter.emit('logging', ` received.\n`);
 
 	// Trim extra spaces from addresses
 	for (let i = 0; i < records.length; i++) {
@@ -26,7 +33,7 @@ async function getRecords(queryLimit = 1000) {
 }
 
 // Extract addresses and request permits
-async function getPermits(records, queryLimit = 1000) {
+async function getPermits(records, queryLimit = 800) {
 	let addresses = new Set();
 	let numPermits = 0;
 
@@ -58,14 +65,19 @@ async function getPermits(records, queryLimit = 1000) {
 		}
 	}
 
-	// (house__ in('345') AND street_name in('3 STREET')) OR 
-
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Found ${addresses.size} addresses. Requesting permits...\n`);
-	console.log('Requesting: ' + permitsURL)
-	const permitsReq = await api.get(permitsURL);
-	const permits = permitsReq.data;
+	eventEmitter.emit('logging', `[${utils.getDate()}] (311) Found ${addresses.size} addresses. Requesting permits...`);
+	// console.log('Requesting: ' + permitsURL);
+	let permits = [];
+	try {
+		const permitsReq = await api.get(permitsURL);
+		permits = permitsReq.data;
+	}
+	catch (err) {
+		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+	}
+	eventEmitter.emit('logging', ` received.\n`);
 
 	return permits;
 }

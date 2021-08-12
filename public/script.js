@@ -1,9 +1,6 @@
 'use strict';
 
-const refreshLink = document.querySelector('a[href*="refresh"]');
-const limit = document.querySelector('input#limit');
 let output = document.querySelector('#output');
-
 socket.on('log_message', function (msg) {
 	if (!output) {
 		output = document.createElement('div');
@@ -15,7 +12,17 @@ socket.on('log_message', function (msg) {
 	output.scrollTop = output.scrollHeight;
 });
 
-refreshLink.addEventListener('click', (event) => {
+const refreshDOB = document.querySelector('.refresh-dob .button');
+const refresh311 = document.querySelector('.refresh-311 .button');
+const limitDOB = document.querySelector('.refresh-dob .limit');
+const limit311 = document.querySelector('.refresh-311 .limit');
+
+refreshDOB.addEventListener('click', (event) => {
 	event.preventDefault();
-	fetch(refreshLink.href + '?limit=' + limit.value);
+	fetch(refreshDOB.href + '?limit=' + limitDOB.value);
+});
+
+refresh311.addEventListener('click', (event) => {
+	event.preventDefault();
+	fetch(refresh311.href + '?limit=' + limit311.value);
 });

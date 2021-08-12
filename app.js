@@ -20,9 +20,14 @@ io.on('connection', (socket) => {
 });
 
 // App routes to handle requests
-app.get('/refresh', async (req, res) => {
+app.get('/refresh/dob', async (req, res) => {
 	const queryLimit = req.query.limit;
 	cityDOB.refreshData(queryLimit);
+	res.end();
+});
+
+app.get('/refresh/311', async (req, res) => {
+	const queryLimit = req.query.limit;
 	city311.refreshData(queryLimit);
 	res.end();
 });
@@ -43,7 +48,7 @@ app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
-	console.log(`[${utils.getDate()}] App listening on port ${port}...\n`);
-	cityDOB.refreshData();
-	city311.refreshData(500);
+	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
+	await cityDOB.refreshData();
+	await city311.refreshData();
 });

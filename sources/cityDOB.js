@@ -9,9 +9,16 @@ const eventEmitter = require('../lib/events');
 async function getViolations(queryLimit = 1000) {
 	const recordsURL = "/mkgf-zjhb.json?$order=inspectiondate DESC&$limit=" + queryLimit;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Requesting ${queryLimit} DOB violations...\n`);
-	const recordsReq = await api.get(recordsURL);
-	const records = recordsReq.data;
+	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Requesting ${queryLimit} DOB violations...`);
+	let records;
+	try {
+		const recordsReq = await api.get(recordsURL);
+		records = recordsReq.data;
+	}
+	catch (err) {
+		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+	}
+	eventEmitter.emit('logging', ` received.\n`);
 
 	const trimDescription = str => str.replace(/.+CONSISTING OF /g, '')
 		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
@@ -47,21 +54,28 @@ async function getPermits(records, queryLimit = 1000) {
 	const requestString = `('${Array.from(bins).join("','")}')`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${queryLimit * 10}`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Found ${bins.size} unique BINs. Requesting permits...\n`);
-	const permitsReq = await api.get(permitsURL);
-	const permits = permitsReq.data;
+	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Found ${bins.size} unique BINs. Requesting permits...`);
+	let permits = [];
+	try {
+		const permitsReq = await api.get(permitsURL);
+		permits = permitsReq.data;
+	}
+	catch (err) {
+		eventEmitter.emit('logging', ` error: ${err.response}\n`);
+	}
+	eventEmitter.emit('logging', ` received.\n`);
 
 	return permits;
 }
 
 // Push data into separate categories
 function processData(records, permits) {
+	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Received ${permits.length} permits. Filtering and applying...\n`);
+
 	const dataObj = {
 		withContacts: [],
 		withoutContacts: []
 	};
-
-	eventEmitter.emit('logging', `[${utils.getDate()}] (DOB) Applying ${permits.length} permits to violations...\n`);
 
 	for (let i = 0; i < records.length; i++) {
 		let violation = Object.create(null);
