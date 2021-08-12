@@ -112,7 +112,7 @@ function processData(records, permits) {
 	return dataObj;
 }
 
-const dataCsv = Object.create(null);
+let dataCsv;
 
 async function refreshData(queryLimit = 800) {
 	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
@@ -121,7 +121,12 @@ let records = await common.getRecords("/erm2-nwe9.json?$where=descriptor in('PES
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
 	const csvData = await common.convertToCSV(results, moduleName);
+	dataCsv = csvData;
 	return csvData;
 }
 
-module.exports = { refreshData };
+function getData(dataType) {
+	return dataCsv[dataType];
+}
+
+module.exports = { refreshData, getData };

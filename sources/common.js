@@ -8,17 +8,14 @@ const eventEmitter = require('../lib/events');
 async function getRecords(queryURL, queryLimit = 1000, dataSource = '') {
 	if (!queryURL) eventEmitter.emit('logging', `[ERROR] Missing URL to query.`);
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Requesting ${dataSource} ${queryLimit} records...`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Requesting ${queryLimit} ${dataSource} records...\n`);
 	let records;
 	try {
 		const recordsReq = await api.get(`${queryURL}&$limit=${queryLimit}`);
 		records = recordsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', ` ${err.message}\n`);
-	}
-	if (records) {
-		eventEmitter.emit('logging', ` Received ${records.length}.\n`);
+		eventEmitter.emit('logging', `${err.message}\n`);
 	}
 
 	return records;
@@ -40,6 +37,8 @@ async function convertToCSV(results, dataSource = '') {
 
 		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
 	}
+
+	return dataCsv;
 }
 
 module.exports = { getRecords, convertToCSV };

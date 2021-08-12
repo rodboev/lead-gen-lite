@@ -90,6 +90,8 @@ function processData(records, permits) {
 	return dataObj;
 }
 
+let dataCsv;
+
 async function refreshData(queryLimit) {
 	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
 	let records = await common.getRecords('/mkgf-zjhb.json?$order=inspectiondate DESC', queryLimit, moduleName);
@@ -97,7 +99,12 @@ async function refreshData(queryLimit) {
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
 	const csvData = await common.convertToCSV(results, moduleName);
+	dataCsv = csvData;
 	return csvData;
 }
 
-module.exports = { refreshData };
+function getData(dataType) {
+	return dataCsv[dataType];
+}
+
+module.exports = { refreshData, getData };
