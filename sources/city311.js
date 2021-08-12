@@ -1,3 +1,5 @@
+const path = require('path');
+
 const api = require('../lib/api');
 const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
@@ -113,11 +115,12 @@ function processData(records, permits) {
 const dataCsv = Object.create(null);
 
 async function refreshData(queryLimit = 800) {
-	let records = await common.getRecords("/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC", queryLimit, 'DOB');
+	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
+let records = await common.getRecords("/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC", queryLimit, moduleName);
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
-	const csvData = await common.convertToCSV(results, 'DOB');
+	const csvData = await common.convertToCSV(results, moduleName);
 	return csvData;
 }
 

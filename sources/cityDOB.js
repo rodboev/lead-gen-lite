@@ -1,3 +1,5 @@
+var path = require('path');
+
 const api = require('../lib/api');
 const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
@@ -89,11 +91,12 @@ function processData(records, permits) {
 }
 
 async function refreshData(queryLimit) {
-	let records = await common.getRecords('/mkgf-zjhb.json?$order=inspectiondate DESC', queryLimit, '311');
+	const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
+	let records = await common.getRecords('/mkgf-zjhb.json?$order=inspectiondate DESC', queryLimit, moduleName);
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = processData(records, permits);
-	const csvData = await common.convertToCSV(results, 'DOB');
+	const csvData = await common.convertToCSV(results, moduleName);
 	return csvData;
 }
 
