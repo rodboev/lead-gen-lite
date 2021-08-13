@@ -42,13 +42,14 @@ const csvHeader = action => ({
 
 async function emitCacheStatus() {
 	const cacheLength = await api.cache.length();
-	eventEmitter.emit('logging', `[${utils.getDate()}] ${cacheLength} external API calls cached. Done.\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Sending request (${cacheLength} requests cached)...\n`);
 }
 
 app.get('/api/dob-:id', async function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
 	const data = cityDOB.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
+	await emitCacheStatus();
 	res.send(data);
 });
 
@@ -56,6 +57,7 @@ app.get('/api/311-:id', async function(req , res){
 	const action = req.query.action;
 	res.set(csvHeader(action));
 	const data = city311.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
+	await emitCacheStatus();
 	res.send(data);
 });
 
@@ -64,8 +66,6 @@ app.use(express.static('public'));
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
 	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
-
-	await cityDOB.refreshData();
-	await city311.refreshData();
-	await emitCacheStatus();
+	cityDOB.refreshData();
+	city311.refreshData();
 });

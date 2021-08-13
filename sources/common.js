@@ -15,7 +15,7 @@ async function getRecords(queryURL, queryLimit = 1000, dataSource = '') {
 		records = recordsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) ${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) [ERROR] ${err.message}\n`);
 	}
 
 	return records;
@@ -37,25 +37,29 @@ async function convertToCSV(results, dataSource = '') {
 
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Pushing ${numLeads} leads (${pctOfTotal}%) to ${filename}...\n`);
 
-		dataCsv[dataType] = await converter.json2csvAsync(dataValue);
+		dataCsv[dataType] = await converter.json2csvAsync(dataValue, {
+			emptyFieldValue: ''
+		});
 	}
 
 	return dataCsv;
 }
 
-function dedupePermits(permits, dataSource = '') {
+function getUniquePermits(permits, dataSource = '') {
 	if (!permits) eventEmitter.emit('logging', `[ERROR] No records to process.`);
 
 	let uniquePermits = [];
-	for (let i = 0; i < permits.length; i++) {
-		const permitExists = uniquePermits.some(uniquePermit => uniquePermit.bin__ === permits[i].bin__);
-		if (!permitExists) {
-			uniquePermits.push(permits[i])
+	const matchBy = ['bin__', 'house__', 'street_name', 'block', 'lot'];
+	permits.forEach(permit => {
+		if (!uniquePermits.some(uniquePermit => uniquePermit.bin__ === permit.bin__ && uniquePermit.owner_s_house__ === permit.owner_s_house__ && uniquePermit.owner_s_house_street_name === permit.owner_s_house_street_name)) {
+			// TODO: Parse date and push only if date is newest
+			uniquePermits.push(permit);
 		}
-	}
+	});
+
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Filtering ${permits.length} permits down to ${uniquePermits.length} uniques...\n`);
 
-	return uniquePermits;
+	return Array.from(uniquePermits);
 }
 
 async function getPermitsByURL(permitsURL, dataSource = '') {
@@ -66,12 +70,12 @@ async function getPermitsByURL(permitsURL, dataSource = '') {
 		permits = permitsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) ${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) [ERROR] ${err.message}\n`);
 	}
 
-	// permits = dedupePermits(permits, dataSource);
+	const uniquePermits = getUniquePermits(permits, dataSource);
 
-	return permits;
+	return uniquePermits;
 }
 
 module.exports = { getRecords, convertToCSV, getPermitsByURL };

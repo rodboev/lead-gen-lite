@@ -51,7 +51,7 @@ async function getPermits(records, queryLimit = 800) {
 	}
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting ${uniqueAddresses.size} permits by unique address...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueAddresses.size} unique addresses...\n`);
 
 	// console.log('Requesting: ' + permitsURL);
 	// TODO: Check permitsURL.length and figure out when Socrata throws a 404
@@ -68,6 +68,7 @@ function applyPermits(records, permits) {
 		withContacts: [],
 		withoutContacts: []
 	};
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} ${moduleName} records...\n`);
 
 	// Split address string into street number and name
 	// TODO: Deduplicate this code with addressesSep above
@@ -79,24 +80,32 @@ function applyPermits(records, permits) {
 		record.streetName = afterSpace;
 	}
 
+	// Try to match up every record with an owner
 	for (let i = 0; i < records.length; i++) {
 		let record = Object.create(null);
 		record.date = utils.formatDate(records[i].created_date);
 		record.notes = `${records[i].incident_address} ${records[i].borough} ${records[i].incident_zip} HAS ${records[i].complaint_type.toUpperCase()}: ${records[i].descriptor.toUpperCase()}`;
 
-		permit = permits.find(permit => records[i].houseNumber === permit.owner_s_house__ && records[i].streetName === permit.owner_s_house_street_name);
-		if (permit && permit.owner_s_phone__) {
-			record.company = permit.owner_s_business_name || '';
-			if (record.company === 'NA' || record.company === 'N/A')
+		// Find most recent owner that matches house number and street name
+		permit = permits.find(permit => permit.owner_s_house__ === records[i].houseNumber && permit.owner_s_house_street_name === records[i].streetName);
+		if (permit) {
+			record.company = permit.owner_s_business_name;
+			if (record.company === 'NA' || record.company === 'N/A') {
 				record.company = '';
+			}
 			record.first_name = permit.owner_s_first_name;
 			record.last_name = permit.owner_s_last_name;
 			record.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
 			record.city = permit.city;
 			record.state = permit.state;
 			record.zip = permit.owner_s_zip_code;
-			record.phone = permit.owner_s_phone__;
-			dataObj.withContacts.push(record);
+			if (permit.owner_s_phone__) {
+				record.phone = permit.owner_s_phone__;
+				dataObj.withContacts.push(record);
+			}
+			else {
+				dataObj.withoutContacts.push(record);
+			}
 		}
 		else {
 			dataObj.withoutContacts.push(record);

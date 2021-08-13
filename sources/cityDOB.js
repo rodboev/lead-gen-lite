@@ -41,7 +41,7 @@ async function getPermits(records, queryLimit = 1000) {
 	// Build request string and query Socrata API
 	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${queryLimit * 10}`;
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting ${uniqueBINs.size} permits by unique BIN...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueBINs.size} unique BINs...\n`);
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
 	return permits;
@@ -54,16 +54,16 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} violations...\n`);
-
+	// Try to match up every record with an owner
 	for (let i = 0; i < records.length; i++) {
 		let record = Object.create(null);
 		record.date = utils.formatDate(records[i].inspectiondate);
 		record.notes = `${records[i].housenumber} ${records[i].streetname} ${records[i].boro} ${records[i].zip} HAS ${records[i].novdescription}`;
 	
-		permit = permits.find(permit => records[i].bin === permit.bin__);
-		if (permit && permit.owner_s_phone__) {
-			record.company = permit.owner_s_business_name || '';
+		// Find most recent owner by BIN
+		permit = permits.find(permit => permit.bin__ === records[i].bin);
+		if (permit) {
+			record.company = permit.owner_s_business_name;
 			if (record.company === 'NA' || record.company === 'N/A')
 				record.company = '';
 			record.first_name = permit.owner_s_first_name;
@@ -72,8 +72,13 @@ function applyPermits(records, permits) {
 			record.city = permit.city;
 			record.state = permit.state;
 			record.zip = permit.owner_s_zip_code;
-			record.phone = permit.owner_s_phone__;
-			dataObj.withContacts.push(record);
+			if (permit.owner_s_phone__) {
+				record.phone = permit.owner_s_phone__;
+				dataObj.withContacts.push(record);
+			}
+			else {
+				dataObj.withoutContacts.push(record);
+			}
 		}
 		else {
 			dataObj.withoutContacts.push(record);
