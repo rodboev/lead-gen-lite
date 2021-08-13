@@ -20,7 +20,7 @@ function cleanData(records) {
 }
 
 // Extract addresses and request permits
-async function getPermits(records, queryLimit = 750) {
+async function getPermits(records, queryLimit) {
 	let uniqueAddresses = new Set();
 	for (const record of records) {
 		uniqueAddresses.add(record.incident_address);
@@ -104,7 +104,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit = 750) {
+async function refreshData(queryLimit = common.defaultLimit) {
 	const recordsURL = "/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC";
 	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);

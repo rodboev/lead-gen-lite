@@ -31,7 +31,7 @@ function cleanData(records) {
 }
 
 // Extract BINs and request permits
-async function getPermits(records, queryLimit = 1000) {
+async function getPermits(records, queryLimit) {
 	let uniqueBINs = new Set();
 
 	for (const record of records) {
@@ -79,7 +79,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit) {
+async function refreshData(queryLimit = common.defaultLimit) {
 	const recordsURL = '/mkgf-zjhb.json?$order=inspectiondate DESC';
 	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);

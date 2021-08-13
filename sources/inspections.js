@@ -18,13 +18,14 @@ function cleanData(records) {
 }
 
 // Extract BBLs (block and lot numbers) and request permits
-async function getPermits(records, queryLimit = 1000) {
+async function getPermits(records, queryLimit) {
 	let uniqueRecords = [];
 
 	for (const record of records) {
-		// Add zeroes to 5 digits
 		// TODO: Add boro code
-		uniqueRecords.push({ block: record.block, lot: record.lot });
+		if (!uniqueRecords.some(uniqueRecord => uniqueRecord.block === record.block && uniqueRecord.lot === record.lot)) {
+			uniqueRecords.push({ block: record.block, lot: record.lot });
+		}
 	}
 
 	// Build request string for Socrata API query
@@ -87,7 +88,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit) {
+async function refreshData(queryLimit = common.defaultLimit) {
 	const recordsURL = "/p937-wjvj.json?$where=result not in('Passed')&$order=inspection_date DESC";
 	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);

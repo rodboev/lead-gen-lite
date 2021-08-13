@@ -8,7 +8,7 @@ const eventEmitter = require('../lib/events');
 async function getRecords(queryURL, queryLimit = 1000, dataSource = '') {
 	if (!queryURL) eventEmitter.emit('logging', `[ERROR] Missing URL to query.`);
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Requesting ${queryLimit} ${dataSource} records...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Requesting ${queryLimit} records...\n`);
 	let records;
 	try {
 		const recordsReq = await api.get(`${queryURL}&$limit=${queryLimit}`);
@@ -102,4 +102,6 @@ function applyPermit(record, permit, customFields) {
 	return newEntry;
 }
 
-module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit };
+const defaultLimit = 1000;
+
+module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit, defaultLimit };
