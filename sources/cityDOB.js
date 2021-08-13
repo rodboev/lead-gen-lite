@@ -34,7 +34,7 @@ function cleanData(records) {
 async function getPermits(records, queryLimit = 1000) {
 	let uniqueBINs = new Set();
 
-	for (record of records) {
+	for (const record of records) {
 		uniqueBINs.add(record.bin);
 	}
 
@@ -54,9 +54,9 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} ${moduleName} violations...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} violations...\n`);
 
-	records.forEach(record => {
+	for (record of records) {
 		// Find most recent owner by BIN
 		const permit = permits.find(permit => permit.bin__ === record.bin);
 
@@ -72,7 +72,7 @@ function applyPermits(records, permits) {
 		else {
 			dataObj.withoutContacts.push(newEntry);
 		}
-	});
+	}
 
 	return dataObj;
 }
@@ -89,7 +89,7 @@ async function refreshData(queryLimit) {
 }
 
 function getData(dataType) {
-	return data[dataType];
+	return data && data[dataType];
 }
 
 module.exports = { refreshData, getData };

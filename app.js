@@ -45,19 +45,19 @@ async function emitCacheStatus() {
 	eventEmitter.emit('logging', `[${utils.getDate()}] Sending request (${cacheLength} requests cached)...\n`);
 }
 
-app.get('/api/dob-:id', async function(req , res){
-	const action = req.query.action;
-	res.set(csvHeader(action));
-	const data = cityDOB.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
-	await emitCacheStatus();
-	res.send(data);
-});
+app.get('/api/:id', async function(req , res) {
+	let urlParts = req.params.id.split('.')[0].split('-');
 
-app.get('/api/311-:id', async function(req , res){
+	let dataSet = urlParts.shift().toUpperCase(); // return '311' or 'DOB'
+	if (dataSet === 'DOB' || dataSet === '311') {
+		dataSet = 'city' + dataSet;
+	}
+
+	const dataType = utils.camelCaseArray(urlParts); // return 'withContacts' or 'withoutContacts'
 	const action = req.query.action;
-	res.set(csvHeader(action));
-	const data = city311.getData(utils.removeExt(utils.unhyphenate(req.params.id)));
-	await emitCacheStatus();
+	res.set(csvHeader(action)); // 'view' or 'download'
+
+	const data = eval(dataSet).getData(dataType); // e.g. city311.getData('withContacts')
 	res.send(data);
 });
 

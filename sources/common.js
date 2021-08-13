@@ -94,7 +94,9 @@ function applyPermit(record, permit, customFields) {
 		newEntry.city = permit.city;
 		newEntry.state = permit.state;
 		newEntry.zip = permit.owner_s_zip_code;
-		newEntry.phone = permit.owner_s_phone__;
+		if (permit.owner_s_phone__) {
+			newEntry.phone = permit.owner_s_phone__;
+		}
 	}
 
 	return newEntry;

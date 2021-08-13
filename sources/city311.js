@@ -68,7 +68,7 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} ${moduleName} records...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} records...\n`);
 
 	// Add separate house number and street name to each record
 	for (const record of records) {
@@ -110,7 +110,7 @@ async function refreshData(queryLimit = 750) {
 }
 
 function getData(dataType) {
-	return data[dataType];
+	return data && data[dataType];
 }
 
 module.exports = { refreshData, getData };
