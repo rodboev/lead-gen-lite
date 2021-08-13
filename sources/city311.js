@@ -113,7 +113,7 @@ async function refreshData(queryLimit = common.defaultLimit) {
 }
 
 function getData(dataType) {
-	return data && data[dataType];
+	return data ? data[dataType] : 'App still loading...';
 }
 
 module.exports = { refreshData, getData };
