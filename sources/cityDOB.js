@@ -47,43 +47,32 @@ async function getPermits(records, queryLimit = 1000) {
 	return permits;
 }
 
-// Push data into separate categories
+// Try to match up every record with an owner
 function applyPermits(records, permits) {
 	const dataObj = {
 		withContacts: [],
 		withoutContacts: []
 	};
 
-	// Try to match up every record with an owner
-	for (let i = 0; i < records.length; i++) {
-		let record = Object.create(null);
-		record.date = utils.formatDate(records[i].inspectiondate);
-		record.notes = `${records[i].housenumber} ${records[i].streetname} ${records[i].boro} ${records[i].zip} HAS ${records[i].novdescription}`;
-	
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} ${moduleName} violations...\n`);
+
+	records.forEach(record => {
 		// Find most recent owner by BIN
-		permit = permits.find(permit => permit.bin__ === records[i].bin);
-		if (permit) {
-			record.company = permit.owner_s_business_name;
-			if (record.company === 'NA' || record.company === 'N/A')
-				record.company = '';
-			record.first_name = permit.owner_s_first_name;
-			record.last_name = permit.owner_s_last_name;
-			record.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
-			record.city = permit.city;
-			record.state = permit.state;
-			record.zip = permit.owner_s_zip_code;
-			if (permit.owner_s_phone__) {
-				record.phone = permit.owner_s_phone__;
-				dataObj.withContacts.push(record);
-			}
-			else {
-				dataObj.withoutContacts.push(record);
-			}
+		const permit = permits.find(permit => permit.bin__ === record.bin);
+
+		// Construct a new entry since we need to transform the existing fields
+		const newEntry = common.applyPermit(record, permit, {
+			date: utils.formatDate(record.inspectiondate),
+			notes: `${record.housenumber} ${record.streetname} ${record.boro} ${record.zip} HAS ${record.novdescription}`
+		});
+
+		if (newEntry.phone) {
+			dataObj.withContacts.push(newEntry);
 		}
 		else {
-			dataObj.withoutContacts.push(record);
+			dataObj.withoutContacts.push(newEntry);
 		}
-	}
+	});
 
 	return dataObj;
 }

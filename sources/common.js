@@ -78,4 +78,26 @@ async function getPermitsByURL(permitsURL, dataSource = '') {
 	return uniquePermits;
 }
 
-module.exports = { getRecords, convertToCSV, getPermitsByURL };
+function applyPermit(record, permit, customFields) {
+	const newEntry = Object.create(null);
+	newEntry.date = customFields.date;
+	newEntry.notes = customFields.notes;
+
+	if (permit) {
+		newEntry.company = permit.owner_s_business_name;
+		if (newEntry.company === 'NA' || newEntry.company === 'N/A') {
+			newEntry.company = '';
+		}
+		newEntry.first_name = permit.owner_s_first_name;
+		newEntry.last_name = permit.owner_s_last_name;
+		newEntry.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
+		newEntry.city = permit.city;
+		newEntry.state = permit.state;
+		newEntry.zip = permit.owner_s_zip_code;
+		newEntry.phone = permit.owner_s_phone__;
+	}
+
+	return newEntry;
+}
+
+module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit };
