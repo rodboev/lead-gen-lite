@@ -13,15 +13,15 @@ function cleanData(records) {
 		.replace(/IN THE ENTIRE APARTMENT LOCATED AT /g, '')
 		.replace(/, \d+?.. STORY, .+/g, '');
 
-	for (let i = 0; i < records.length; i++) {
-		records[i].novdescription = trimDescription(records[i].novdescription);
+	for (const record of records) {
+		record.novdescription = trimDescription(record.novdescription);
 	}
 
-	// Combine descriptions
+	// Combine descriptions by folding onto previous and removing new entry
 	const originalLength = records.length;
-	for (let i = 0; i < records.length; i++) {
-		if (records[i - 1] && records[i].housenumber === records[i - 1].housenumber && records[i].streetname === records[i - 1].streetname && records[i].apartment === records[i - 1].apartment) {
-			records[i - 1].novdescription += ` AND ${records[i].novdescription}`;
+	for (const [i, record] of records.entries()) {
+		if (records[i - 1] && record.housenumber === records[i - 1].housenumber && record.streetname === records[i - 1].streetname && record.apartment === records[i - 1].apartment) {
+			records[i - 1].novdescription += ` AND ${record.novdescription}`;
 			records.splice(i, 1);
 		}
 	}
@@ -34,8 +34,8 @@ function cleanData(records) {
 async function getPermits(records, queryLimit = 1000) {
 	let uniqueBINs = new Set();
 
-	for (let i = 0; i < records.length; i++) {
-		uniqueBINs.add(records[i].bin);
+	for (record of records) {
+		uniqueBINs.add(record.bin);
 	}
 
 	// Build request string and query Socrata API

@@ -9,8 +9,8 @@ const moduleName = path.basename(module.filename, path.extname(module.filename))
 
 function cleanData(records) {
 	// Trim extra spaces from addresses
-	for (let i = 0; i < records.length; i++) {
-		records[i].incident_address = utils.trimWhitespace(records[i].incident_address);
+	for (const record of records) {
+		record.incident_address = utils.trimWhitespace(record.incident_address)
 	}
 
 	// TODO: Match extra spaces in permits later using like:
@@ -20,22 +20,19 @@ function cleanData(records) {
 }
 
 // Extract addresses and request permits
-async function getPermits(records, queryLimit = 800) {
+async function getPermits(records, queryLimit = 750) {
 	let uniqueAddresses = new Set();
-
-	for (let i = 0; i < records.length; i++) {
-		uniqueAddresses.add(records[i].incident_address);
+	for (const record of records) {
+		uniqueAddresses.add(record.incident_address);
 	}
 
 	// Split address string into street number and name
-	const addressesSep = [];
-	for (const address of uniqueAddresses) {
-		let newAddress = {};
-		let [beforeSpace, ...afterSpace] = address.split(" ");
-		afterSpace = afterSpace.join(" ");
-		newAddress.houseNumber = beforeSpace;
-		newAddress.streetName = afterSpace;
-		addressesSep.push(newAddress);
+	let newAddresses = [];
+	for (const record of records) {
+		const address = record.incident_address;
+		const houseNumber = address.substr(0, address.indexOf(' '));
+		const streetName = address.substr(address.indexOf(' ') + 1);
+		newAddresses.push({houseNumber, streetName});
 	}
 
 	// Build request string for Socrata API query
@@ -43,12 +40,14 @@ async function getPermits(records, queryLimit = 800) {
 	const prefix = `(house__ in('`;
 	const middle = `') AND street_name in('`;
 	const end = `'))`;
-	for (let i = 0; i < addressesSep.length; i++) {
-		requestString += `${prefix}${addressesSep[i].houseNumber}${middle}${addressesSep[i].streetName}${end}`;
-		if (i !== addressesSep.length - 1) {
+	
+	for (const [i, address] of newAddresses.entries()) {
+		requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end}`;
+		if (i !== newAddresses.length - 1) {
 			requestString += ' OR ';
-		}
+		}  
 	}
+
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueAddresses.size} unique addresses...\n`);
@@ -71,17 +70,14 @@ function applyPermits(records, permits) {
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} ${moduleName} records...\n`);
 
-	// Add some extra data to each record, splitting original address tring into a house number and street name
-	// TODO: Deduplicate this code with addressesSep above
-	records.forEach(record => {
-		let newAddress = {};
-		let [beforeSpace, ...afterSpace] = record.incident_address.split(" ");
-		afterSpace = afterSpace.join(" ");
-		record.houseNumber = beforeSpace;
-		record.streetName = afterSpace;
-	});
+	// Add separate house number and street name to each record
+	for (const record of records) {
+		const address = record.incident_address;
+		record.houseNumber = address.substr(0, address.indexOf(' '));
+		record.streetName = address.substr(address.indexOf(' ') + 1);
+	}
 
-	records.forEach(record => {
+	for (const record of records) {
 		// Find most recent owner that matches house number and street name
 		const permit = permits.find(permit => permit.owner_s_house__ === record.houseNumber && permit.owner_s_house_street_name === record.streetName);
 
@@ -97,14 +93,14 @@ function applyPermits(records, permits) {
 		else {
 			dataObj.withoutContacts.push(newEntry);
 		}
-	});
+	}
 
 	return dataObj;
 }
 
 let dataCsv = Object.create(null);
 
-async function refreshData(queryLimit = 800) {
+async function refreshData(queryLimit = 750) {
 	const recordsURL = "/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC";
 	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
 	records = cleanData(records);
