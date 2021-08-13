@@ -95,7 +95,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, numDays) {
+async function refreshData(queryLimit, days) {
 	const baseURL = '/p937-wjvj.json';
 	const customFilter = `result not in('Passed')`;
 	const dateField = 'inspection_date';
@@ -103,7 +103,7 @@ async function refreshData(queryLimit, numDays) {
 		moduleName,
 		baseURL,
 		customFilter,
-		numDays,
+		days,
 		queryLimit,
 		dateField,
 		orderBy: dateField

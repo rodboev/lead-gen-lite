@@ -18,18 +18,39 @@ const refreshInspections = document.querySelector('.refresh-inspections .button'
 const limitDOB = document.querySelector('.refresh-dob .limit');
 const limit311 = document.querySelector('.refresh-311 .limit');
 const limitInspections = document.querySelector('.refresh-inspections .limit');
+const daysDOB = document.querySelector('.refresh-dob .days');
+const days311 = document.querySelector('.refresh-311 .days');
+const daysInspections = document.querySelector('.refresh-inspections .days');
 
 refreshDOB.addEventListener('click', (event) => {
 	event.preventDefault();
-	fetch(refreshDOB.href + '?limit=' + limitDOB.value);
+	let limit = limitDOB && limitDOB.value;
+	let days = daysDOB && daysDOB.value;
+	const params = Object.assign({},
+		days && {days},
+		limit && {limit}
+	);
+	fetch(refreshDOB.href + '?' + new URLSearchParams(params).toString());
 });
 
 refresh311.addEventListener('click', (event) => {
 	event.preventDefault();
-	fetch(refresh311.href + '?limit=' + limit311.value);
+	let limit = limit311 && limit311.value;
+	let days = days311 && days311.value;
+	const params = Object.assign({},
+		days && {days},
+		limit && {limit}
+	);
+	fetch(refresh311.href + '?' + new URLSearchParams(params).toString());
 });
 
 refreshInspections.addEventListener('click', (event) => {
 	event.preventDefault();
-	fetch(refreshInspections.href + '?limit=' + limitInspections.value);
+	let limit = limitInspections && limitInspections.value;
+	let days = daysInspections && daysInspections.value;
+	const params = Object.assign({},
+		days && {days},
+		limit && {limit}
+	);
+	fetch(refreshInspections.href + '?' + new URLSearchParams(params).toString());
 });

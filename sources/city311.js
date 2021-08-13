@@ -103,7 +103,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, numDays) {
+async function refreshData(queryLimit, days) {
 	const baseURL = '/erm2-nwe9.json';
 	const customFilter = `descriptor in('PESTS') OR complaint_type = 'Rodent'`;
 	const dateField = 'created_date';
@@ -111,7 +111,7 @@ async function refreshData(queryLimit, numDays) {
 		moduleName,
 		baseURL,
 		customFilter,
-		numDays,
+		days,
 		queryLimit,
 		dateField,
 		orderBy: dateField

@@ -29,11 +29,9 @@ app.get('/refresh/:id', async (req, res) => {
 	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
 	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
 
-	const queryLimit = req.query.limit;
-
 	const dataSetObj = eval(dataSet);
 	if (dataSetObj) {
-		eval(dataSet).refreshData(queryLimit);
+		eval(dataSet).refreshData(req.query.limit, req.query.days);
 		res.end();
 	}
 	else {

@@ -79,13 +79,13 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, numDays) {
+async function refreshData(queryLimit, days) {
 	const baseURL = '/mkgf-zjhb.json';
 	const dateField = 'inspectiondate';
 	let records = await common.getRecords({
 		moduleName,
 		baseURL, 
-		numDays,
+		days,
 		queryLimit,
 		dateField,
 		orderBy: dateField

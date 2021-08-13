@@ -9,14 +9,15 @@ async function getRecords({
 		moduleName = '',
 		baseURL = '',
 		customFilter = '',
-		numDays = 7,
+		days = 7,
 		queryLimit,
 		dateField,
 		orderBy
 	}) {
+	// TODO: Refactor this with axios.getUri()
 	let queryURL = baseURL + '?';
-	if (customFilter || numDays) {
-		const dateString = numDays ? `${dateField}>='${utils.todayMinus(numDays)}'` : '';
+	if (customFilter || days) {
+		const dateString = days ? `${dateField}>='${utils.todayMinus(days)}'` : '';
 		const whereString = [customFilter, dateString].filter(Boolean).join(' AND ');
 		queryURL += `&$where=${whereString}`;
 	}
@@ -28,25 +29,26 @@ async function getRecords({
 	}
 
 	let loggingString = `[${utils.getDate()}] (${moduleName}) Requesting `;
-	if (numDays) {
-		loggingString += `${numDays} days of`;
+	if (days) {
+		loggingString += `${days} days of `;
 	}
-	loggingString += 'records';
+	loggingString += `${moduleName} records`;
 	if (queryLimit) {
 		loggingString += ` (limit ${queryLimit})`;
 	}
 	loggingString += '...\n';
 	eventEmitter.emit('logging', loggingString);
-	console.log(`Requesting ${moduleName} records: ${queryURL}`);
 
 	let records;
 	try {
+		console.log(`Requesting ${moduleName} records: ${queryURL}`);
 		const recordsReq = await api.get(`${queryURL}`);
 		records = recordsReq.data;
 	}
 	catch (err) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) RECORDS ERROR: ${err.message}\n`);
 	}
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${records.length} records.\n`);
 	// console.log(records);
 
 	return records;
@@ -96,9 +98,9 @@ function getUniquePermits(permits, moduleName = '') {
 async function getPermitsByURL(queryURL, moduleName = '') {
 	let permits = [];
 
-	console.log(`Requesting ${moduleName} permits: ${queryURL}`);
 	try {
 		const permitsReq = await api.get(queryURL);
+		// console.log(`Requesting ${moduleName} permits: ${queryURL}`);
 		permits = permitsReq.data;
 	}
 	catch (err) {
