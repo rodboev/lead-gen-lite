@@ -9,6 +9,7 @@ const eventEmitter = require('./lib/events');
 const cityDOB = require('./sources/cityDOB');
 const city311 = require('./sources/city311');
 const inspections = require('./sources/inspections');
+const common = require('./sources/common');
 
 // Real-time logging
 const history = [];
@@ -31,7 +32,7 @@ app.get('/refresh/:id', async (req, res) => {
 
 	const dataSetObj = eval(dataSet);
 	if (dataSetObj) {
-		eval(dataSet).refreshData(req.query.limit, req.query.days);
+		eval(dataSet).refreshData({ days: req.query.days || common.defaultDays });
 		res.end();
 	}
 	else {
@@ -75,8 +76,8 @@ app.use(express.static('public'));
 
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
-	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
-	cityDOB.refreshData();
-	city311.refreshData();
-	inspections.refreshData();
+	console.log(`> [${utils.getDate()}] App listening on port ${port}...`);
+	cityDOB.refreshData({ days: common.defaultDays });
+	city311.refreshData({ days: common.defaultDays });
+	inspections.refreshData({ days: common.defaultDays });
 });

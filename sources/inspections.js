@@ -28,7 +28,7 @@ function cleanData(records) {
 }
 
 // Extract BBLs (block and lot numbers) and request permits
-async function getPermits(records, queryLimit) {
+async function getPermits(records) {
 	let uniqueRecords = [];
 
 	for (const record of records) {
@@ -43,20 +43,25 @@ async function getPermits(records, queryLimit) {
 	const prefix = `(block in('`;
 	const middle = `') AND lot in('`;
 	const end = `'))`;
+	let trippedLimit;
 	
 	for (const [i, record] of uniqueRecords.entries()) {
 		// TODO: Batch requests over 32k
 		if (requestString.length < 32768) {
 			requestString += `${prefix}${record.block}${middle}${record.lot}${end} OR `;
 		}
+		else {
+			trippedLimit = true;
+		}
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
 
-	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${10000}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC`;
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueRecords.length} unique BBLs...\n`);
-
-	// console.log('Requesting: ' + permitsURL);
+	if (trippedLimit) {
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request. This will result in fewer matches.\n`);
+	}
 
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
@@ -95,7 +100,7 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, days) {
+async function refreshData({days}) {
 	const baseURL = '/p937-wjvj.json';
 	const customFilter = `result not in('Passed')`;
 	const dateField = 'inspection_date';
@@ -104,13 +109,12 @@ async function refreshData(queryLimit, days) {
 		baseURL,
 		customFilter,
 		days,
-		queryLimit,
 		dateField,
 		orderBy: dateField
 	});
 
 	records = cleanData(records);
-	const permits = await getPermits(records, queryLimit);
+	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
 	data = await common.convertToCSV(results, moduleName);
 }

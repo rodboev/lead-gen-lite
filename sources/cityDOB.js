@@ -31,7 +31,7 @@ function cleanData(records) {
 }
 
 // Extract BINs and request permits
-async function getPermits(records, queryLimit) {
+async function getPermits(records) {
 	let uniqueBINs = new Set();
 
 	for (const record of records) {
@@ -40,7 +40,7 @@ async function getPermits(records, queryLimit) {
 
 	// Build request string and query Socrata API
 	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
-	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${10000}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}`;
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueBINs.size} unique BINs...\n`);
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
@@ -79,20 +79,19 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, days) {
+async function refreshData({days}) {
 	const baseURL = '/mkgf-zjhb.json';
 	const dateField = 'inspectiondate';
 	let records = await common.getRecords({
 		moduleName,
 		baseURL, 
 		days,
-		queryLimit,
 		dateField,
 		orderBy: dateField
 	});
 
 	records = cleanData(records);
-	const permits = await getPermits(records, queryLimit);
+	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
 	data = await common.convertToCSV(results, moduleName);
 }

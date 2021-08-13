@@ -20,7 +20,7 @@ function cleanData(records) {
 }
 
 // Extract addresses and request permits
-async function getPermits(records, queryLimit) {
+async function getPermits(records) {
 	// Make addresses unique
 	let uniqueAddresses = new Set();
 	for (const record of records) {
@@ -42,22 +42,27 @@ async function getPermits(records, queryLimit) {
 	const prefix = `(house__ in('`;
 	const middle = `') AND street_name in('`;
 	const end = `'))`;
+	let trippedLimit;
 	
 	for (const [i, address] of newAddresses.entries()) {
 		// TODO: Batch requests over 32k
 		if (requestString.length < 32768) {
 			requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end} OR `;
 		}
+		else {
+			trippedLimit = true;
+		}
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
 
-	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${10000}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC`;
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueAddresses.size} unique addresses...\n`);
+	if (trippedLimit) {
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
+	}
 
-	// console.log('Requesting: ' + permitsURL);
-	// TODO: Check permitsURL.length and figure out when Socrata throws a 404
-	// TODO: Then batch into sets of less than that string length
+	// TODO: Then batch into sets of less than 32k length each
 
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
@@ -103,22 +108,21 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit, days) {
+async function refreshData({days}) {
 	const baseURL = '/erm2-nwe9.json';
-	const customFilter = `descriptor in('PESTS') OR complaint_type = 'Rodent'`;
+	const customFilter = `(descriptor in('PESTS') OR complaint_type = 'Rodent')`;
 	const dateField = 'created_date';
 	let records = await common.getRecords({
 		moduleName,
 		baseURL,
 		customFilter,
 		days,
-		queryLimit,
 		dateField,
 		orderBy: dateField
 	});
 
 	records = cleanData(records);
-	const permits = await getPermits(records, queryLimit);
+	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
 	data = await common.convertToCSV(results, moduleName);
 }

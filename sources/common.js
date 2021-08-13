@@ -4,13 +4,15 @@ const api = require('../lib/api');
 const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
 
+const defaultLimit = 50000;
+const defaultDays = 5;
+
 // Prep records array
 async function getRecords({
 		moduleName = '',
 		baseURL = '',
 		customFilter = '',
-		days = 7,
-		queryLimit,
+		days,
 		dateField,
 		orderBy
 	}) {
@@ -24,32 +26,26 @@ async function getRecords({
 	if (orderBy) {
 		queryURL += `&$order=${orderBy} DESC`;
 	}
-	if (queryLimit) {
-		queryURL += `&$limit=${queryLimit}`;
-	}
+	queryURL += `&$limit=${defaultLimit}`;
 
 	let loggingString = `[${utils.getDate()}] (${moduleName}) Requesting `;
 	if (days) {
 		loggingString += `${days} days of `;
 	}
 	loggingString += `${moduleName} records`;
-	if (queryLimit) {
-		loggingString += ` (limit ${queryLimit})`;
-	}
 	loggingString += '...\n';
 	eventEmitter.emit('logging', loggingString);
 
 	let records;
+	console.log(utils.truncate(`Requesting ${moduleName} records: ${queryURL}`, 256));
 	try {
-		console.log(`Requesting ${moduleName} records: ${queryURL}`);
 		const recordsReq = await api.get(`${queryURL}`);
 		records = recordsReq.data;
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${records.length} records from ${moduleName}.\n`);
 	}
 	catch (err) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) RECORDS ERROR: ${err.message}\n`);
 	}
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${records.length} records.\n`);
-	// console.log(records);
 
 	return records;
 }
@@ -98,9 +94,10 @@ function getUniquePermits(permits, moduleName = '') {
 async function getPermitsByURL(queryURL, moduleName = '') {
 	let permits = [];
 
+	queryURL += `&$limit=${defaultLimit}`;
+	console.log(utils.truncate(`> Requesting ${moduleName} permits: ${queryURL}`, 256));
 	try {
 		const permitsReq = await api.get(queryURL);
-		// console.log(`Requesting ${moduleName} permits: ${queryURL}`);
 		permits = permitsReq.data;
 	}
 	catch (err) {
@@ -136,6 +133,4 @@ function applyPermit(record, permit, customFields) {
 	return newEntry;
 }
 
-const defaultLimit = 1000;
-
-module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit, defaultLimit };
+module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit, defaultLimit, defaultDays };
