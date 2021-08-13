@@ -81,7 +81,7 @@ async function getPermitsByURL(permitsURL, dataSource = '') {
 function applyPermit(record, permit, customFields) {
 	const newEntry = Object.create(null);
 	newEntry.date = customFields.date;
-	newEntry.notes = customFields.notes;
+	newEntry.notes = customFields.notes.toUpperCase();
 
 	if (permit) {
 		newEntry.company = permit.owner_s_business_name;

@@ -8,7 +8,17 @@ const common = require('./common.js');
 const moduleName = utils.capitalize(path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, ''));
 
 function cleanData(records) {
-	// TODO: Remove records with missing or future dates
+	// Remove records with missing inspection dates or dates in the future
+	let newRecords = [];
+	const todaysDate = new Date();
+	for (record of records) {
+	if (record.inspection_date && new Date(record.inspection_date) < todaysDate) {
+			record.inspection_date = utils.formatDate(record.inspection_date);
+			newRecords.push(record);
+		}
+	}
+	records = newRecords;
+
 	// Add zeroes to 5 digits
 	for (record of records) {
 		record.block = record.block.padStart(5, '0');
@@ -37,10 +47,7 @@ async function getPermits(records, queryLimit) {
 	for (const [i, record] of uniqueRecords.entries()) {
 		// TODO: Batch requests over 32k
 		if (requestString.length < 32768) {
-			requestString += `${prefix}${record.block}${middle}${record.lot}${end}`;
-			if (i !== uniqueRecords.length - 1) {
-				requestString += ' OR ';
-			}
+			requestString += `${prefix}${record.block}${middle}${record.lot}${end} OR `;
 		}
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
@@ -71,8 +78,8 @@ function applyPermits(records, permits) {
 
 		// Construct a new entry since we need to transform the existing fields
 		const newEntry = common.applyPermit(record, permit, {
-			date: record.inspection_date && utils.formatDate(record.inspection_date),
-			notes: `${record.house_number} ${record.street_name} ${record.borough && record.borough.toUpperCase()} ${record.zip_code} HAS ${record.result.toUpperCase()}`
+			date: record.inspection_date,
+			notes: `${record.house_number} ${record.street_name} ${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`
 		});
 	
 		if (newEntry.phone) {

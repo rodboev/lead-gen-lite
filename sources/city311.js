@@ -21,12 +21,13 @@ function cleanData(records) {
 
 // Extract addresses and request permits
 async function getPermits(records, queryLimit) {
+	// Make addresses unique
 	let uniqueAddresses = new Set();
 	for (const record of records) {
 		uniqueAddresses.add(record.incident_address);
 	}
 
-	// Split address string into street number and name
+	// Split each address string into a street number and name
 	let newAddresses = [];
 	for (const record of records) {
 		const address = record.incident_address;
@@ -35,7 +36,8 @@ async function getPermits(records, queryLimit) {
 		newAddresses.push({houseNumber, streetName});
 	}
 
-	// Build request string for Socrata API query
+	// Build request string:
+	// e.g., 325 3 STREET becomes (house__ in('345') AND street_name in('3 STREET'))
 	let requestString = '';
 	const prefix = `(house__ in('`;
 	const middle = `') AND street_name in('`;
@@ -44,10 +46,7 @@ async function getPermits(records, queryLimit) {
 	for (const [i, address] of newAddresses.entries()) {
 		// TODO: Batch requests over 32k
 		if (requestString.length < 32768) {
-			requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end}`;
-			if (i !== newAddresses.length - 1) {
-				requestString += ' OR ';
-			}
+			requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end} OR `;
 		}
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
