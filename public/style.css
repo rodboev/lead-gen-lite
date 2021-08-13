@@ -22,7 +22,7 @@ a:hover:not('.button') {
 	box-sizing: border-box;
 	overflow-y: scroll;
 	overflow-x: hidden;
-	height: 14em;
+	height: 21em;
 	scroll-behavior: smooth;
 	background: white;
 }
