@@ -23,6 +23,12 @@
 	<li>311-without-contacts.csv
 		<div>[ <a href="/api/311-without-contacts.csv">view</a> | <a href="/api/311-without-contacts.csv?action=download">download</a> ]</div>
 	</li>
+	<li>inspections-with-contacts.csv
+		<div>[ <a href="/api/inspections-with-contacts.csv">view</a> | <a href="/api/inspections-with-contacts.csv?action=download">download</a> ]</div>
+	</li>
+	<li>inspections-without-contacts.csv
+		<div>[ <a href="/api/inspections-without-contacts.csv">view</a> | <a href="/api/inspections-without-contacts.csv?action=download">download</a> ]</div>
+	</li>
 </ul>
 
 <div>If the data looks wrong or you want more records, force a refresh:</div>
@@ -34,6 +40,10 @@
 <div class="refresh refresh-311">
 	<input type="text" class="limit" value="750">
 	<a class="button" href="/refresh/311">Request 311 data</span></a>
+</div>
+<div class="refresh refresh-inspections">
+	<input type="text" class="limit" value="500">
+	<a class="button" href="/refresh/inspections">Request Inspections data</span></a>
 </div>
 
 <script src="/vendor/socket.io.min.js"></script>

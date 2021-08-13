@@ -98,7 +98,7 @@ function applyPermits(records, permits) {
 	return dataObj;
 }
 
-let dataCsv = Object.create(null);
+let data;
 
 async function refreshData(queryLimit = 750) {
 	const recordsURL = "/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC";

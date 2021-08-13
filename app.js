@@ -8,6 +8,7 @@ const utils = require('./lib/utils');
 const eventEmitter = require('./lib/events');
 const cityDOB = require('./sources/cityDOB');
 const city311 = require('./sources/city311');
+const inspections = require('./sources/inspections');
 
 // Real-time logging
 const history = [];
@@ -22,13 +23,22 @@ io.on('connection', (socket) => {
 
 // App routes to handle requests
 app.get('/refresh/:id', async (req, res) => {
-	let dataSet = req.params.id.toUpperCase();
-	dataSet = (dataSet === 'DOB' || dataSet === '311') && 'city' + dataSet;
-	
+	let dataSet = req.params.id;
+
+	// Return 'city311' or 'cityDOB'
+	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
+	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
+
 	const queryLimit = req.query.limit;
 
-	eval(dataSet).refreshData(queryLimit);
-	res.end();
+	const dataSetObj = eval(dataSet);
+	if (dataSetObj) {
+		eval(dataSet).refreshData(queryLimit);
+		res.end();
+	}
+	else {
+		res.status(404).send('Not found');
+	}
 });
 
 const csvHeader = action => ({
@@ -45,15 +55,22 @@ app.get('/api/:id', async function(req , res) {
 	let urlParts = req.params.id.split('.')[0].split('-');
 
 	// Return 'city311' or 'cityDOB'
-	let dataSet = urlParts.shift().toUpperCase();
-	dataSet = (dataSet === 'DOB' || dataSet === '311') && 'city' + dataSet;
+	let dataSet = urlParts.shift();
+	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
+	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
 
 	const action = req.query.action;
 	res.set(csvHeader(action));
 
 	const dataType = utils.camelCaseArray(urlParts); // 'withContacts' or 'withoutContacts'
-	const data = eval(dataSet).getData(dataType); // city311.getData('withContacts')
-	res.send(data);
+	const dataSetObj = eval(dataSet);
+	if (dataSetObj) {
+		const data = eval(dataSet).getData(dataType); // city311.getData('withContacts')
+		res.send(data);
+	}
+	else {
+		res.status(404).send('Not found');
+	}
 });
 
 app.use(express.static('public'));
@@ -63,4 +80,5 @@ http.listen(port, async () => {
 	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
 	cityDOB.refreshData();
 	city311.refreshData();
+	inspections.refreshData(100);
 });
