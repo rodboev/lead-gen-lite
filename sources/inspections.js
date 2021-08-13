@@ -10,9 +10,9 @@ const moduleName = utils.capitalize(path.basename(module.filename, path.extname(
 function cleanData(records) {
 	// Remove records with missing inspection dates or dates in the future
 	let newRecords = [];
-	const todaysDate = new Date();
+	const today = new Date();
 	for (record of records) {
-	if (record.inspection_date && new Date(record.inspection_date) < todaysDate) {
+		if (record.inspection_date && new Date(record.inspection_date) < today) {
 			record.inspection_date = utils.formatDate(record.inspection_date);
 			newRecords.push(record);
 		}
@@ -52,7 +52,7 @@ async function getPermits(records, queryLimit) {
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
 
-	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${10000}`;
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueRecords.length} unique BBLs...\n`);
 
@@ -95,9 +95,20 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit = common.defaultLimit) {
-	const recordsURL = "/p937-wjvj.json?$where=result not in('Passed')&$order=inspection_date DESC";
-	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
+async function refreshData(queryLimit, numDays) {
+	const baseURL = '/p937-wjvj.json';
+	const customFilter = `result not in('Passed')`;
+	const dateField = 'inspection_date';
+	let records = await common.getRecords({
+		moduleName,
+		baseURL,
+		customFilter,
+		numDays,
+		queryLimit,
+		dateField,
+		orderBy: dateField
+	});
+
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = applyPermits(records, permits);

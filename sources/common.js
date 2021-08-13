@@ -5,23 +5,54 @@ const utils = require('../lib/utils');
 const eventEmitter = require('../lib/events');
 
 // Prep records array
-async function getRecords(queryURL, queryLimit = 1000, dataSource = '') {
-	if (!queryURL) eventEmitter.emit('logging', `[ERROR] Missing URL to query.`);
+async function getRecords({
+		moduleName = '',
+		baseURL = '',
+		customFilter = '',
+		numDays = 7,
+		queryLimit,
+		dateField,
+		orderBy
+	}) {
+	let queryURL = baseURL + '?';
+	if (customFilter || numDays) {
+		const dateString = numDays ? `${dateField}>='${utils.todayMinus(numDays)}'` : '';
+		const whereString = [customFilter, dateString].filter(Boolean).join(' AND ');
+		queryURL += `&$where=${whereString}`;
+	}
+	if (orderBy) {
+		queryURL += `&$order=${orderBy} DESC`;
+	}
+	if (queryLimit) {
+		queryURL += `&$limit=${queryLimit}`;
+	}
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Requesting ${queryLimit} records...\n`);
+	let loggingString = `[${utils.getDate()}] (${moduleName}) Requesting `;
+	if (numDays) {
+		loggingString += `${numDays} days of`;
+	}
+	loggingString += 'records';
+	if (queryLimit) {
+		loggingString += ` (limit ${queryLimit})`;
+	}
+	loggingString += '...\n';
+	eventEmitter.emit('logging', loggingString);
+	console.log(`Requesting ${moduleName} records: ${queryURL}`);
+
 	let records;
 	try {
-		const recordsReq = await api.get(`${queryURL}&$limit=${queryLimit}`);
+		const recordsReq = await api.get(`${queryURL}`);
 		records = recordsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) [ERROR] ${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) RECORDS ERROR: ${err.message}\n`);
 	}
+	// console.log(records);
 
 	return records;
 }
 
-async function convertToCSV(results, dataSource = '') {
+async function convertToCSV(results, moduleName = '') {
 	if (!results) eventEmitter.emit('logging', `[ERROR] Nothing to convert to CSV.`);
 
 	let totalCount = 0;
@@ -31,11 +62,11 @@ async function convertToCSV(results, dataSource = '') {
 
 	const dataCsv = Object.create(null);
 	for (const [dataType, dataValue] of Object.entries(results)) {
-		let filename = `${dataSource.toLowerCase()}-${utils.hyphenate(dataType)}.csv`;
+		let filename = `${moduleName.toLowerCase()}-${utils.hyphenate(dataType)}.csv`;
 		let numLeads = Object.keys(dataValue).length;
 		let pctOfTotal = Math.round(Object.keys(dataValue).length / totalCount * 100);
 
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Pushing ${numLeads} leads (${pctOfTotal}%) to ${filename}...\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Pushing ${numLeads} leads (${pctOfTotal}%) to ${filename}...\n`);
 
 		dataCsv[dataType] = await converter.json2csvAsync(dataValue, {
 			emptyFieldValue: ''
@@ -45,7 +76,7 @@ async function convertToCSV(results, dataSource = '') {
 	return dataCsv;
 }
 
-function getUniquePermits(permits, dataSource = '') {
+function getUniquePermits(permits, moduleName = '') {
 	if (!permits) eventEmitter.emit('logging', `[ERROR] No records to process.`);
 
 	let uniquePermits = [];
@@ -57,23 +88,24 @@ function getUniquePermits(permits, dataSource = '') {
 		}
 	});
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) Filtering ${permits.length} permits down to ${uniquePermits.length} uniques...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Filtering ${permits.length} permits down to ${uniquePermits.length} uniques...\n`);
 
 	return Array.from(uniquePermits);
 }
 
-async function getPermitsByURL(permitsURL, dataSource = '') {
+async function getPermitsByURL(queryURL, moduleName = '') {
 	let permits = [];
 
+	console.log(`Requesting ${moduleName} permits: ${queryURL}`);
 	try {
-		const permitsReq = await api.get(permitsURL);
+		const permitsReq = await api.get(queryURL);
 		permits = permitsReq.data;
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${dataSource}) [ERROR] ${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) PERMITS ERROR:  ${err.message}\n`);
 	}
 
-	const uniquePermits = getUniquePermits(permits, dataSource);
+	const uniquePermits = getUniquePermits(permits, moduleName);
 
 	return uniquePermits;
 }

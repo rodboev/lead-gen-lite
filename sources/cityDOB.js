@@ -40,7 +40,7 @@ async function getPermits(records, queryLimit) {
 
 	// Build request string and query Socrata API
 	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
-	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${queryLimit * 10}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}&$limit=${10000}`;
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueBINs.size} unique BINs...\n`);
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
@@ -79,9 +79,18 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit = common.defaultLimit) {
-	const recordsURL = '/mkgf-zjhb.json?$order=inspectiondate DESC';
-	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
+async function refreshData(queryLimit, numDays) {
+	const baseURL = '/mkgf-zjhb.json';
+	const dateField = 'inspectiondate';
+	let records = await common.getRecords({
+		moduleName,
+		baseURL, 
+		numDays,
+		queryLimit,
+		dateField,
+		orderBy: dateField
+	});
+
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = applyPermits(records, permits);

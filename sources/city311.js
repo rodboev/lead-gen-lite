@@ -51,7 +51,7 @@ async function getPermits(records, queryLimit) {
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
 
-	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
+	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${10000}`;
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueAddresses.size} unique addresses...\n`);
 
@@ -103,9 +103,20 @@ function applyPermits(records, permits) {
 
 let data;
 
-async function refreshData(queryLimit = common.defaultLimit) {
-	const recordsURL = "/erm2-nwe9.json?$where=descriptor in('PESTS') OR complaint_type = 'Rodent'&$order=created_date DESC";
-	let records = await common.getRecords(recordsURL, queryLimit, moduleName);
+async function refreshData(queryLimit, numDays) {
+	const baseURL = '/erm2-nwe9.json';
+	const customFilter = `descriptor in('PESTS') OR complaint_type = 'Rodent'`;
+	const dateField = 'created_date';
+	let records = await common.getRecords({
+		moduleName,
+		baseURL,
+		customFilter,
+		numDays,
+		queryLimit,
+		dateField,
+		orderBy: dateField
+	});
+
 	records = cleanData(records);
 	const permits = await getPermits(records, queryLimit);
 	const results = applyPermits(records, permits);
