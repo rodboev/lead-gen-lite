@@ -21,17 +21,13 @@ io.on('connection', (socket) => {
 });
 
 // App routes to handle requests
-app.get('/refresh/dob', async (req, res) => {
+app.get('/refresh/:id', async (req, res) => {
+	let dataSet = req.params.id.toUpperCase();
+	dataSet = (dataSet === 'DOB' || dataSet === '311') && 'city' + dataSet;
+	
 	const queryLimit = req.query.limit;
-	cityDOB.refreshData(queryLimit);
-	await emitCacheStatus();
-	res.end();
-});
 
-app.get('/refresh/311', async (req, res) => {
-	const queryLimit = req.query.limit;
-	city311.refreshData(queryLimit);
-	await emitCacheStatus();
+	eval(dataSet).refreshData(queryLimit);
 	res.end();
 });
 
@@ -48,16 +44,15 @@ async function emitCacheStatus() {
 app.get('/api/:id', async function(req , res) {
 	let urlParts = req.params.id.split('.')[0].split('-');
 
-	let dataSet = urlParts.shift().toUpperCase(); // return '311' or 'DOB'
-	if (dataSet === 'DOB' || dataSet === '311') {
-		dataSet = 'city' + dataSet;
-	}
+	// Return 'city311' or 'cityDOB'
+	let dataSet = urlParts.shift().toUpperCase();
+	dataSet = (dataSet === 'DOB' || dataSet === '311') && 'city' + dataSet;
 
-	const dataType = utils.camelCaseArray(urlParts); // return 'withContacts' or 'withoutContacts'
 	const action = req.query.action;
-	res.set(csvHeader(action)); // 'view' or 'download'
+	res.set(csvHeader(action));
 
-	const data = eval(dataSet).getData(dataType); // e.g. city311.getData('withContacts')
+	const dataType = utils.camelCaseArray(urlParts); // 'withContacts' or 'withoutContacts'
+	const data = eval(dataSet).getData(dataType); // city311.getData('withContacts')
 	res.send(data);
 });
 
