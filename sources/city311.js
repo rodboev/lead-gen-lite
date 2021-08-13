@@ -42,11 +42,15 @@ async function getPermits(records, queryLimit = 750) {
 	const end = `'))`;
 	
 	for (const [i, address] of newAddresses.entries()) {
-		requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end}`;
-		if (i !== newAddresses.length - 1) {
-			requestString += ' OR ';
-		}  
+		// TODO: Batch requests over 32k
+		if (requestString.length < 32768) {
+			requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end}`;
+			if (i !== newAddresses.length - 1) {
+				requestString += ' OR ';
+			}
+		}
 	}
+	requestString = utils.removeLast(requestString, ' OR ');
 
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 

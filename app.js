@@ -80,5 +80,5 @@ http.listen(port, async () => {
 	console.log(`[${utils.getDate()}] App listening on port ${port}...`);
 	cityDOB.refreshData();
 	city311.refreshData();
-	inspections.refreshData(100);
+	inspections.refreshData();
 });

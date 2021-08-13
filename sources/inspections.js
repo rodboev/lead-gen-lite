@@ -18,7 +18,7 @@ function cleanData(records) {
 }
 
 // Extract BBLs (block and lot numbers) and request permits
-async function getPermits(records, queryLimit = 500) {
+async function getPermits(records, queryLimit = 1000) {
 	let uniqueRecords = [];
 
 	for (const record of records) {
@@ -34,11 +34,15 @@ async function getPermits(records, queryLimit = 500) {
 	const end = `'))`;
 	
 	for (const [i, record] of uniqueRecords.entries()) {
-		requestString += `${prefix}${record.block}${middle}${record.lot}${end}`;
-		if (i !== uniqueRecords.length - 1) {
-			requestString += ' OR ';
+		// TODO: Batch requests over 32k
+		if (requestString.length < 32768) {
+			requestString += `${prefix}${record.block}${middle}${record.lot}${end}`;
+			if (i !== uniqueRecords.length - 1) {
+				requestString += ' OR ';
+			}
 		}
 	}
+	requestString = utils.removeLast(requestString, ' OR ');
 
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC&$limit=${queryLimit * 10}`;
 
