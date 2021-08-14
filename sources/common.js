@@ -9,51 +9,22 @@ const defaultDays = 5;
 const permitsAPI = '/ipu4-2q9a.json';
 
 // Prep records array
-async function getRecords({
-		moduleName = '',
-		baseURL = '',
-		customFilter = '',
-		days,
-		dateField,
-		orderBy
-	}) {
-	// Log request about to be made
+async function getRecords({ moduleName = '', baseURL = '', where = '', days, dateField, orderBy }) {
+	// Log request
+	// TODO: Use decorators for this
 	let loggingString = `[${utils.getDate()}] (${moduleName}) Requesting `;
 	days && (loggingString += `${days} days of `);
 	loggingString += `${moduleName} records...\n`;
 	eventEmitter.emit('logging', loggingString);
 
-	// Construct request
-	let where;
-	if (customFilter || days) {
-		const dateString = days ? `${dateField}>='${utils.todayMinus(days)}'` : '';
-		where = [customFilter, dateString].filter(Boolean).join(' AND ');
-	}
-
-	const queryParams = {
-		$where: where,
-		$order: `${orderBy} DESC`,
-		$limit: defaultLimit
-	};
-	const queryString = api.getUri({url: baseURL, params: queryParams });
-	console.log(utils.truncate(`> Requesting ${moduleName} records: ${queryString}`, 256));
-
-	// Get data
-	let records;
-	try {
-		const recordsReq = await api.get(baseURL, { params: queryParams	});
-		records = recordsReq.data;
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${utils.addCommas(records.length)} records from ${moduleName}.\n`);
-	}
-	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) RECORDS ERROR: ${err.message}\n`);
-	}
+	// Pass on the request
+	const records = await fetchData({ moduleName, baseURL, where, days, dateField, orderBy, requestType: 'records' });
 
 	return records;
 }
 
 async function convertToCSV(results, moduleName = '') {
-	if (!results) eventEmitter.emit('logging', `[ERROR] Nothing to convert to CSV.`);
+	if (!results) eventEmitter.emit('logging', `[ERROR] Nothing to convert to CSV.\n`);
 
 	let totalCount = 0;
 	for (const dataValue of Object.values(results)) {
@@ -77,7 +48,7 @@ async function convertToCSV(results, moduleName = '') {
 }
 
 function getUniquePermits(permits, moduleName = '') {
-	if (!permits) eventEmitter.emit('logging', `[ERROR] No records to process.`);
+	if (!permits) eventEmitter.emit('logging', `[ERROR] No records to process.\n`);
 
 	let uniquePermits = [];
 	const matchBy = ['bin__', 'house__', 'street_name', 'block', 'lot'];
@@ -93,37 +64,34 @@ function getUniquePermits(permits, moduleName = '') {
 	return Array.from(uniquePermits);
 }
 
-async function getPermitsByURL({
-	moduleName = '',
-	baseURL,
-	customFilter = '',
-	days,
-	dateField,
-	orderBy
-}) {
+async function fetchData({ moduleName = '', baseURL, where = '', days, dateField, orderBy, requestType = 'request' }) {
+	// Add number of days to where (whereString)
+	if (where || days) {
+		const dateString = days ? `${dateField}>='${utils.todayMinus(days)}'` : '';
+		where = [where, dateString].filter(Boolean).join(' AND ');
+	}
+
 	// Construct request
-	queryParams = {
-		$where: customFilter,
-		$order: orderBy && `${orderBy} DESC`,
+	const queryParams = {
+		$where: where,
+		$order: `${orderBy} DESC`,
 		$limit: defaultLimit
 	};
-
 	const queryString = api.getUri({url: baseURL, params: queryParams });
-	console.log(utils.truncate(`> Requesting ${moduleName} permits: ${queryString}`, 256));
+	console.log(utils.truncate(`> Requesting ${moduleName} ${requestType}: ${queryString}`, 256));
 
 	// Get data
-	let permits = [];
+	let records;
 	try {
-		const permitsReq = await api.get(baseURL, { params: queryParams	});
-		permits = permitsReq.data;
+		const recordsReq = await api.get(queryString);
+		records = recordsReq.data;
+		// eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${utils.addCommas(records.length)} ${requestType} from ${moduleName}.\n`);
 	}
 	catch (err) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) PERMITS ERROR:  ${err.message}\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) ${requestType.toUpperCase()} ERROR: ${err.message}\n`);
 	}
 
-	const uniquePermits = getUniquePermits(permits, moduleName);
-
-	return uniquePermits;
+	return records;
 }
 
 function applyPermit(record, permit, customFields) {
@@ -156,6 +124,7 @@ module.exports = {
 	permitsAPI,
 	getRecords,
 	convertToCSV,
-	getPermitsByURL,
+	fetchData,
+	getUniquePermits,
 	applyPermit
 };

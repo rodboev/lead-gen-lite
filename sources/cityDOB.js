@@ -39,16 +39,21 @@ async function getPermits(records) {
 	}
 
 	// Build request string and query Socrata API
-	const requestString = `bin__ in('${Array.from(uniqueBINs).join("','")}')`;
+	const where = `bin__ in('${Array.from(uniqueBINs).join("','")}')`;
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueBINs.size)} unique BINs...\n`);
 
-	const permits = await common.getPermitsByURL({
+	const dateString = 'filing_date';
+	const permits = await common.fetchData({
 		moduleName,
 		baseURL: common.permitsAPI,
-		customFilter: requestString
+		where,
+		orderBy: dateString,
+		requestType: 'permits'
 	});
 
-	return permits;
+	const uniquePermits = common.getUniquePermits(permits, moduleName);
+
+	return uniquePermits;
 }
 
 // Try to match up every record with an owner
@@ -86,14 +91,9 @@ let data;
 async function refreshData({days}) {
 	const baseURL = '/mkgf-zjhb.json';
 	const dateField = 'inspectiondate';
-	let records = await common.getRecords({
-		moduleName,
-		baseURL, 
-		days,
-		dateField,
-		orderBy: dateField
-	});
-
+	let records;
+	
+	records = await common.getRecords({ moduleName,	baseURL, days, dateField, orderBy: dateField });
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);

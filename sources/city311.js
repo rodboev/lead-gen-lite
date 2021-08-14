@@ -38,7 +38,7 @@ async function getPermits(records) {
 
 	// Build request string:
 	// e.g., 325 3 STREET becomes (house__ in('345') AND street_name in('3 STREET'))
-	let requestString = '';
+	let where = '';
 	const prefix = `(house__ in('`;
 	const middle = `') AND street_name in('`;
 	const end = `'))`;
@@ -46,30 +46,32 @@ async function getPermits(records) {
 	
 	for (const [i, address] of newAddresses.entries()) {
 		// TODO: Batch requests over 32k
-		if (requestString.length < 32768) {
-			requestString += `${prefix}${address.houseNumber}${middle}${address.streetName}${end} OR `;
+		if (where.length < 32768) {
+			where += `${prefix}${address.houseNumber}${middle}${address.streetName}${end} OR `;
 		}
 		else {
 			trippedLimit = true;
 		}
 	}
-	requestString = utils.removeLast(requestString, ' OR ');
-
-	const dateString = 'filing_date';
+	where = utils.removeLast(where, ' OR ');
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueAddresses.size)} unique addresses...\n`);
 	if (trippedLimit) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
 	}
 
-	const permits = await common.getPermitsByURL({
+	const dateString = 'filing_date';
+	const permits = await common.fetchData({
 		moduleName,
 		baseURL: common.permitsAPI,
-		customFilter: requestString,
-		orderBy: dateString
+		where,
+		orderBy: dateString,
+		requestType: 'permits'
 	});
 
-	return permits;
+	const uniquePermits = common.getUniquePermits(permits, moduleName);
+
+	return uniquePermits;
 }
 
 // Try to match up every record with an owner
@@ -113,17 +115,11 @@ let data;
 
 async function refreshData({days}) {
 	const baseURL = '/erm2-nwe9.json';
-	const customFilter = `(descriptor in('PESTS') OR complaint_type = 'Rodent')`;
+	const where = `(descriptor in('PESTS') OR complaint_type = 'Rodent')`;
 	const dateField = 'created_date';
-	let records = await common.getRecords({
-		moduleName,
-		baseURL,
-		customFilter,
-		days,
-		dateField,
-		orderBy: dateField
-	});
+	let records;
 
+	records = await common.getRecords({ moduleName, baseURL, where, days, dateField, orderBy: dateField	});
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);

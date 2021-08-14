@@ -39,7 +39,7 @@ async function getPermits(records) {
 	}
 
 	// Build request string for Socrata API query
-	let requestString = '';
+	let where = '';
 	const prefix = `(block in('`;
 	const middle = `') AND lot in('`;
 	const end = `'))`;
@@ -47,14 +47,14 @@ async function getPermits(records) {
 	
 	for (const [i, record] of uniqueRecords.entries()) {
 		// TODO: Batch requests over 32k
-		if (requestString.length < 32768) {
-			requestString += `${prefix}${record.block}${middle}${record.lot}${end} OR `;
+		if (where.length < 32768) {
+			where += `${prefix}${record.block}${middle}${record.lot}${end} OR `;
 		}
 		else {
 			trippedLimit = true;
 		}
 	}
-	requestString = utils.removeLast(requestString, ' OR ');
+	where = utils.removeLast(where, ' OR ');
 
 	const dateString = 'filing_date';
 
@@ -63,14 +63,17 @@ async function getPermits(records) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
 	}
 
-	const permits = await common.getPermitsByURL({
+	const permits = await common.fetchData({
 		moduleName,
 		baseURL: common.permitsAPI,
-		customFilter: requestString,
-		orderBy: dateString
+		where,
+		orderBy: dateString,
+		requestType: 'permits'
 	});
 
-	return permits;
+	const uniquePermits = common.getUniquePermits(permits, moduleName);
+
+	return uniquePermits;
 }
 
 // Try to match up every record with an owner
@@ -107,17 +110,11 @@ let data;
 
 async function refreshData({days}) {
 	const baseURL = '/p937-wjvj.json';
-	const customFilter = `result not in('Passed')`;
+	const where = `result not in('Passed')`;
 	const dateField = 'inspection_date';
-	let records = await common.getRecords({
-		moduleName,
-		baseURL,
-		customFilter,
-		days,
-		dateField,
-		orderBy: dateField
-	});
-
+	let records;
+	
+	records = await common.getRecords({	moduleName,	baseURL, where, days, dateField, orderBy: dateField	});
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
