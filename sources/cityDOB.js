@@ -26,7 +26,7 @@ function cleanData(records) {
 		}
 	}
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${originalLength - records.length} violation descriptions...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${utils.addCommas(originalLength - records.length)} violation descriptions...\n`);
 	return records;
 }
 
@@ -41,7 +41,7 @@ async function getPermits(records) {
 	// Build request string and query Socrata API
 	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
 	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}`;
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueBINs.size} unique BINs...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueBINs.size)} unique BINs...\n`);
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
 
 	return permits;
@@ -54,7 +54,7 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} violations...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${utils.addCommas(permits.length)} permits to ${utils.addCommas(records.length)} violations...\n`);
 
 	for (record of records) {
 		// Find most recent owner by BIN

@@ -35,6 +35,7 @@ input {
 	font: 10.5pt sans-serif;
 	padding-left: 5pt;
 	outline: none;
+	min-width: 2.5em;
 }
 .refresh span {
 	margin-right: 0.5em;

@@ -58,7 +58,7 @@ async function getPermits(records) {
 
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueRecords.length} unique BBLs...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueRecords.length)} unique BBLs...\n`);
 	if (trippedLimit) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request. This will result in fewer matches.\n`);
 	}
@@ -75,7 +75,7 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} records...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${utils.addCommas(permits.length)} permits to ${utils.addCommas(records.length)} records...\n`);
 
 	for (const record of records) {
 		// Find most recent owner that matches block and lot

@@ -41,7 +41,7 @@ async function getRecords({
 	try {
 		const recordsReq = await api.get(`${queryURL}`);
 		records = recordsReq.data;
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${records.length} records from ${moduleName}.\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${utils.addCommas(records.length)} records from ${moduleName}.\n`);
 	}
 	catch (err) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) RECORDS ERROR: ${err.message}\n`);
@@ -64,7 +64,7 @@ async function convertToCSV(results, moduleName = '') {
 		let numLeads = Object.keys(dataValue).length;
 		let pctOfTotal = Math.round(Object.keys(dataValue).length / totalCount * 100);
 
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Pushing ${numLeads} leads (${pctOfTotal}%) to ${filename}...\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Pushing ${utils.addCommas(numLeads)} leads (${pctOfTotal}%) to ${filename}...\n`);
 
 		dataCsv[dataType] = await converter.json2csvAsync(dataValue, {
 			emptyFieldValue: ''
@@ -86,7 +86,7 @@ function getUniquePermits(permits, moduleName = '') {
 		}
 	});
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Filtering ${permits.length} permits down to ${uniquePermits.length} uniques...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Filtering ${utils.addCommas(permits.length)} permits down to ${uniquePermits.length} uniques...\n`);
 
 	return Array.from(uniquePermits);
 }

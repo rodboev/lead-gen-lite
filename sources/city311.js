@@ -57,7 +57,7 @@ async function getPermits(records) {
 
 	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC`;
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${uniqueAddresses.size} unique addresses...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueAddresses.size)} unique addresses...\n`);
 	if (trippedLimit) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
 	}
@@ -76,7 +76,7 @@ function applyPermits(records, permits) {
 		withoutContacts: []
 	};
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${permits.length} permits to ${records.length} records...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Applying ${utils.addCommas(permits.length)} permits to ${utils.addCommas(records.length)} records...\n`);
 
 	// Add separate house number and street name to each record
 	for (const record of records) {
