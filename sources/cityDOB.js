@@ -39,10 +39,14 @@ async function getPermits(records) {
 	}
 
 	// Build request string and query Socrata API
-	const requestString = `('${Array.from(uniqueBINs).join("','")}')`;
-	const permitsURL = `/ipu4-2q9a.json?$where=bin__ in${requestString}`;
+	const requestString = `bin__ in('${Array.from(uniqueBINs).join("','")}')`;
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueBINs.size)} unique BINs...\n`);
-	const permits = await common.getPermitsByURL(permitsURL, moduleName);
+
+	const permits = await common.getPermitsByURL({
+		moduleName,
+		baseURL: common.permitsAPI,
+		customFilter: requestString
+	});
 
 	return permits;
 }

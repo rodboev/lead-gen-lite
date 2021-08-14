@@ -55,16 +55,19 @@ async function getPermits(records) {
 	}
 	requestString = utils.removeLast(requestString, ' OR ');
 
-	const permitsURL = `/ipu4-2q9a.json?$where=${requestString}&$order=filing_date DESC`;
+	const dateString = 'filing_date';
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueAddresses.size)} unique addresses...\n`);
 	if (trippedLimit) {
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
 	}
 
-	// TODO: Then batch into sets of less than 32k length each
-
-	const permits = await common.getPermitsByURL(permitsURL, moduleName);
+	const permits = await common.getPermitsByURL({
+		moduleName,
+		baseURL: common.permitsAPI,
+		customFilter: requestString,
+		orderBy: dateString
+	});
 
 	return permits;
 }

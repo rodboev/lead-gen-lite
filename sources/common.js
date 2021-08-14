@@ -6,6 +6,7 @@ const eventEmitter = require('../lib/events');
 
 const defaultLimit = 50000;
 const defaultDays = 5;
+const permitsAPI = '/ipu4-2q9a.json';
 
 // Prep records array
 async function getRecords({
@@ -92,13 +93,28 @@ function getUniquePermits(permits, moduleName = '') {
 	return Array.from(uniquePermits);
 }
 
-async function getPermitsByURL(queryURL, moduleName = '') {
-	let permits = [];
+async function getPermitsByURL({
+	moduleName = '',
+	baseURL,
+	customFilter = '',
+	days,
+	dateField,
+	orderBy
+}) {
+	// Construct request
+	queryParams = {
+		$where: customFilter,
+		$order: orderBy && `${orderBy} DESC`,
+		$limit: defaultLimit
+	};
 
-	queryURL += `&$limit=${defaultLimit}`;
-	console.log(utils.truncate(`> Requesting ${moduleName} permits: ${queryURL}`, 256));
+	const queryString = api.getUri({url: baseURL, params: queryParams });
+	console.log(utils.truncate(`> Requesting ${moduleName} permits: ${queryString}`, 256));
+
+	// Get data
+	let permits = [];
 	try {
-		const permitsReq = await api.get(queryURL);
+		const permitsReq = await api.get(baseURL, { params: queryParams	});
 		permits = permitsReq.data;
 	}
 	catch (err) {
@@ -134,4 +150,12 @@ function applyPermit(record, permit, customFields) {
 	return newEntry;
 }
 
-module.exports = { getRecords, convertToCSV, getPermitsByURL, applyPermit, defaultLimit, defaultDays };
+module.exports = {
+	defaultLimit,
+	defaultDays,
+	permitsAPI,
+	getRecords,
+	convertToCSV,
+	getPermitsByURL,
+	applyPermit
+};
