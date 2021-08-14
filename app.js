@@ -77,8 +77,9 @@ app.use(express.static('public'));
 const port = parseInt(process.env.PORT, 10) || 3000;
 http.listen(port, async () => {
 	console.log(`> [${utils.getDate()}] App listening on port ${port}...`);
-	cityDOB.refreshData({ days: common.defaultDays });
-	city311.refreshData({ days: common.defaultDays });
-	inspections.refreshData({ days: common.defaultDays });
-	// TODO: Use Promise.all to log cache length after requests complete
+	await Promise.all([
+		cityDOB.refreshData({ days: common.defaultDays }),
+		city311.refreshData({ days: common.defaultDays }),
+		inspections.refreshData({ days: common.defaultDays })
+	]);
 });
