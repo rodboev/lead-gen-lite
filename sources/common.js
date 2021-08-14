@@ -8,6 +8,12 @@ const defaultLimit = 50000;
 const defaultDays = 5;
 const permitsAPI = '/ipu4-2q9a.json';
 
+let data = {};
+
+function getData(dataSet, dataType) {
+	return data[dataSet] ? data[dataSet][dataType] : 'App still loading...';
+}
+
 // Prep records array
 async function getRecords({ moduleName = '', baseURL = '', where = '', days, dateField, orderBy }) {
 	// Log request
@@ -122,6 +128,8 @@ module.exports = {
 	defaultLimit,
 	defaultDays,
 	permitsAPI,
+	data,
+	getData,
 	getRecords,
 	convertToCSV,
 	fetchData,

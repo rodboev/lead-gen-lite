@@ -38,7 +38,7 @@ async function getPermits(records) {
 		uniqueBINs.add(record.bin);
 	}
 
-	// Build request string and query Socrata API
+	// Build $where request string
 	const where = `bin__ in('${Array.from(uniqueBINs).join("','")}')`;
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueBINs.size)} unique BINs...\n`);
 
@@ -86,8 +86,6 @@ function applyPermits(records, permits) {
 	return dataObj;
 }
 
-let data;
-
 async function refreshData({days}) {
 	const baseURL = '/mkgf-zjhb.json';
 	const dateField = 'inspectiondate';
@@ -97,11 +95,7 @@ async function refreshData({days}) {
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
-	data = await common.convertToCSV(results, moduleName);
+	common.data.cityDOB = await common.convertToCSV(results, moduleName);
 }
 
-function getData(dataType) {
-	return data ? data[dataType] : 'App still loading...';
-}
-
-module.exports = { refreshData, getData };
+module.exports = { refreshData };

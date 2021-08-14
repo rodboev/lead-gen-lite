@@ -26,12 +26,12 @@ io.on('connection', (socket) => {
 app.get('/refresh/:id', async (req, res) => {
 	let dataSet = req.params.id;
 
-	// Return 'city311' or 'cityDOB'
+	// Return 'city311', 'cityDOB', 'inspections'...
 	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
 	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
 
-	const dataSetObj = eval(dataSet);
-	if (dataSetObj) {
+	if (common.data[dataSet]) {
+		// TODO: Get rid of eval by moving refreshData method into common and parameterizing dataSet
 		eval(dataSet).refreshData({ days: req.query.days || common.defaultDays });
 		res.end();
 	}
@@ -53,18 +53,18 @@ async function emitCacheStatus() {
 app.get('/api/:id', async function(req , res) {
 	let urlParts = req.params.id.split('.')[0].split('-');
 
-	// Return 'city311' or 'cityDOB'
-	let dataSet = urlParts.shift();
-	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
-	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
-
 	const action = req.query.action;
 	res.set(csvHeader(action));
 
-	const dataType = utils.camelCaseArray(urlParts); // 'withContacts' or 'withoutContacts'
-	const dataSetObj = eval(dataSet);
-	if (dataSetObj) {
-		const data = eval(dataSet).getData(dataType); // city311.getData('withContacts')
+	// Remove and return 'city311', 'cityDOB', 'inspections'...
+	let dataSet = urlParts.shift();
+	if (dataSet === 'dob') dataSet = dataSet.toUpperCase()
+	if (dataSet === 'DOB' || dataSet === '311') dataSet =  'city' + dataSet;
+	
+	// Return 'withContacts' or 'withoutContacts'
+	const dataType = utils.camelCaseArray(urlParts);
+	if (common.data[dataSet]) {
+		const data = common.getData(dataSet, dataType);
 		res.send(data);
 	}
 	else {

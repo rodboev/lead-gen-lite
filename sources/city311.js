@@ -36,7 +36,7 @@ async function getPermits(records) {
 		newAddresses.push({houseNumber, streetName});
 	}
 
-	// Build request string:
+	// Build $where request string
 	// e.g., 325 3 STREET becomes (house__ in('345') AND street_name in('3 STREET'))
 	let where = '';
 	const prefix = `(house__ in('`;
@@ -123,11 +123,7 @@ async function refreshData({days}) {
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
-	data = await common.convertToCSV(results, moduleName);
+	common.data.city311 = await common.convertToCSV(results, moduleName);
 }
 
-function getData(dataType) {
-	return data ? data[dataType] : 'App still loading...';
-}
-
-module.exports = { refreshData, getData };
+module.exports = { refreshData };

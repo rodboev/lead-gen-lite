@@ -38,7 +38,7 @@ async function getPermits(records) {
 		}
 	}
 
-	// Build request string for Socrata API query
+	// Build $where request string
 	let where = '';
 	const prefix = `(block in('`;
 	const middle = `') AND lot in('`;
@@ -113,16 +113,12 @@ async function refreshData({days}) {
 	const where = `result not in('Passed')`;
 	const dateField = 'inspection_date';
 	let records;
-	
+
 	records = await common.getRecords({	moduleName,	baseURL, where, days, dateField, orderBy: dateField	});
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
-	data = await common.convertToCSV(results, moduleName);
+	common.data.inspections = await common.convertToCSV(results, moduleName);
 }
 
-function getData(dataType) {
-	return data && data[dataType];
-}
-
-module.exports = { refreshData, getData };
+module.exports = { refreshData };
