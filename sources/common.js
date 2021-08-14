@@ -16,30 +16,31 @@ async function getRecords({
 		dateField,
 		orderBy
 	}) {
-	// TODO: Refactor this with axios.getUri()
-	let queryURL = baseURL + '?';
-	if (customFilter || days) {
-		const dateString = days ? `${dateField}>='${utils.todayMinus(days)}'` : '';
-		const whereString = [customFilter, dateString].filter(Boolean).join(' AND ');
-		queryURL += `&$where=${whereString}`;
-	}
-	if (orderBy) {
-		queryURL += `&$order=${orderBy} DESC`;
-	}
-	queryURL += `&$limit=${defaultLimit}`;
-
+	// Log request about to be made
 	let loggingString = `[${utils.getDate()}] (${moduleName}) Requesting `;
-	if (days) {
-		loggingString += `${days} days of `;
-	}
-	loggingString += `${moduleName} records`;
-	loggingString += '...\n';
+	days && (loggingString += `${days} days of `);
+	loggingString += `${moduleName} records...\n`;
 	eventEmitter.emit('logging', loggingString);
 
+	// Construct request
+	let where;
+	if (customFilter || days) {
+		const dateString = days ? `${dateField}>='${utils.todayMinus(days)}'` : '';
+		where = [customFilter, dateString].filter(Boolean).join(' AND ');
+	}
+
+	const queryParams = {
+		$where: where,
+		$order: `${orderBy} DESC`,
+		$limit: defaultLimit
+	};
+	const queryString = api.getUri({url: baseURL, params: queryParams });
+	console.log(utils.truncate(`> Requesting ${moduleName} records: ${queryString}`, 256));
+
+	// Get data
 	let records;
-	console.log(utils.truncate(`Requesting ${moduleName} records: ${queryURL}`, 256));
 	try {
-		const recordsReq = await api.get(`${queryURL}`);
+		const recordsReq = await api.get(baseURL, { params: queryParams	});
 		records = recordsReq.data;
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Got ${utils.addCommas(records.length)} records from ${moduleName}.\n`);
 	}

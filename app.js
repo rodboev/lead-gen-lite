@@ -80,4 +80,5 @@ http.listen(port, async () => {
 	cityDOB.refreshData({ days: common.defaultDays });
 	city311.refreshData({ days: common.defaultDays });
 	inspections.refreshData({ days: common.defaultDays });
+	// TODO: Use Promise.all to log cache length after requests complete
 });

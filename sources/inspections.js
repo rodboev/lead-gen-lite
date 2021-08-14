@@ -60,7 +60,7 @@ async function getPermits(records) {
 
 	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Requesting permits for ${utils.addCommas(uniqueRecords.length)} unique BBLs...\n`);
 	if (trippedLimit) {
-		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request. This will result in fewer matches.\n`);
+		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) WARNING: Permits request shortened. This will result in fewer matches.\n`);
 	}
 
 	const permits = await common.getPermitsByURL(permitsURL, moduleName);
