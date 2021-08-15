@@ -95,7 +95,8 @@ async function refreshData({days}) {
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
-	common.data.cityDOB = await common.convertToCSV(results, moduleName);
+	common.data.json.cityDOB = results;
+	common.data.csv.cityDOB = await common.convertToCSV(results, moduleName);
 }
 
 module.exports = { refreshData };

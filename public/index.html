@@ -11,6 +11,12 @@
 <div>This API exposes the following endpoints:</div>
 
 <ul class="links">
+	<li>all-with-contacts.csv
+		<div>[ <a href="/api/all-with-contacts.csv">view</a> | <a href="/api/all-with-contacts.csv?action=download">download</a> ]</div>
+	</li>
+	<!-- li>all-without-contacts.csv
+		<div>[ <a href="/api/all-without-contacts.csv">view</a> | <a href="/api/all-without-contacts.csv?action=download">download</a> ]</div>
+	</li -->
 	<li>dob-with-contacts.csv
 		<div>[ <a href="/api/dob-with-contacts.csv">view</a> | <a href="/api/dob-with-contacts.csv?action=download">download</a> ]</div>
 	</li>
@@ -33,15 +39,15 @@
 
 <div>If the data looks wrong or you want more records, force a refresh:</div>
 
-<div class="refresh refresh-dob">
+<div class="refresh">
 	<span>Days:</span><input type="text" class="days" value="5" size="1">
 	<a class="button" href="/refresh/dob">Request DOB data</span></a>
 </div>
-<div class="refresh refresh-311">
+<div class="refresh">
 	<span>Days:</span><input type="text" class="days" value="5" size="1">
 	<a class="button" href="/refresh/311">Request 311 data</span></a>
 </div>
-<div class="refresh refresh-inspections">
+<div class="refresh">
 	<span>Days:</span><input type="text" class="days" value="5" size="1">
 	<a class="button" href="/refresh/inspections">Request Inspections data</span></a>
 </div>

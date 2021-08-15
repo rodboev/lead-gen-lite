@@ -123,7 +123,8 @@ async function refreshData({days}) {
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
-	common.data.city311 = await common.convertToCSV(results, moduleName);
+	common.data.json.city311 = results;
+	common.data.csv.city311 = await common.convertToCSV(results, moduleName);
 }
 
 module.exports = { refreshData };

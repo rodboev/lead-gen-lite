@@ -8,10 +8,17 @@ const defaultLimit = 50000;
 const defaultDays = 5;
 const permitsAPI = '/ipu4-2q9a.json';
 
-let data = {};
+let data = {
+	json: {},
+	csv: {}
+};
 
-function getData(dataSet, dataType) {
-	return data[dataSet] ? data[dataSet][dataType] : 'App still loading...';
+function getDataCSV(source, dataSet) {
+	return data.csv[source] ? data.csv[source][dataSet] : 'App still loading...';
+}
+
+function getDataJSON(source, dataSet) {
+	return data.json[source] ? data.json[source][dataSet] : 'App still loading...';
 }
 
 // Prep records array
@@ -38,14 +45,14 @@ async function convertToCSV(results, moduleName = '') {
 	}
 
 	const dataCsv = Object.create(null);
-	for (const [dataType, dataValue] of Object.entries(results)) {
-		let filename = `${moduleName.toLowerCase()}-${utils.hyphenate(dataType)}.csv`;
+	for (const [dataSet, dataValue] of Object.entries(results)) {
+		let filename = `${moduleName.toLowerCase()}-${utils.hyphenate(dataSet)}.csv`;
 		let numLeads = Object.keys(dataValue).length;
 		let pctOfTotal = Math.round(Object.keys(dataValue).length / totalCount * 100);
 
 		eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Pushing ${utils.addCommas(numLeads)} leads (${pctOfTotal}%) to ${filename}...\n`);
 
-		dataCsv[dataType] = await converter.json2csvAsync(dataValue, {
+		dataCsv[dataSet] = await converter.json2csvAsync(dataValue, {
 			emptyFieldValue: ''
 		});
 	}
@@ -129,7 +136,7 @@ module.exports = {
 	defaultDays,
 	permitsAPI,
 	data,
-	getData,
+	getDataCSV,
 	getRecords,
 	convertToCSV,
 	fetchData,
