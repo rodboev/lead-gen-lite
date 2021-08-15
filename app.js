@@ -51,21 +51,22 @@ async function emitCacheStatus() {
 	eventEmitter.emit('logging', `[${utils.getDate()}] Sending request (${cacheLength} requests cached)...\n`);
 }
 
-app.get('/api/all-with-contacts.csv', async function(req , res) {
+app.get('/api/all-:id.csv', async function(req , res) {
+	let urlParts = req.params.id.split('.')[0].split('-');
+
 	const action = req.query.action;
 	res.set(csvHeader(action));
 
 	// Return 'withContacts' or 'withoutContacts'
-	// const dataSet = utils.camelCaseArray(urlParts);
+	const dataSet = utils.camelCaseArray(urlParts);
 
-	// loop over and combine common.data.csv keys
-	// const results = common.data.json.cityDOB.withContacts;
 	try {
-		const results = [
-			...common.data.json.city311.withContacts,
-			...common.data.json.cityDOB.withContacts,
-			...common.data.json.inspections.withContacts,
-		];
+		let results = [];
+		for (const source of Object.keys(common.data.json)) {
+			for (record of common.data.json[source][dataSet]) {
+				results.push(record);
+			}
+		}
 
 		// const result = await common.convertToCSV(results, 'all');
 		const response = await converter.json2csvAsync(results, {
