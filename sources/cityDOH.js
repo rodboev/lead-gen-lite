@@ -8,6 +8,25 @@ const common = require('./common.js');
 const moduleName = path.basename(module.filename, path.extname(module.filename)).replace(/^(city)/, '');
 
 function cleanData(records) {
+	// Prefix action field if it's nonstandard
+	const standardAction = 'Violations were cited in the following area(s).';
+	for (const record of records) {
+		if (record.action !== standardAction) {
+			record.violation_description = record.action + record.violation_description;
+		}
+	}
+
+	// Combine subsequent descriptions by folding onto previous and removing new entry
+	const originalLength = records.length;
+	for (const [i, record] of records.entries()) {
+		if (records[i - 1] && record.building === records[i - 1].building && record.street === records[i - 1].street) {
+			records[i - 1].violation_description += ` AND ${record.violation_description}`;
+			records.splice(i, 1);
+		}
+	}
+
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${utils.addCommas(originalLength - records.length)} violation descriptions...\n`);
+	return records;
 }
 
 // Extract BINs and request permits
@@ -52,7 +71,7 @@ function applyPermits(records, permits) {
 		// Construct a new entry since we need to transform the existing fields
 		const newEntry = common.applyPermit(record, permit, {
 			date: utils.formatDate(record.inspection_date),
-			notes: `${record.building} ${record.street} ${record.boro.toUpperCase()} ${record.zipcode} HAS ${record.violation_description}`
+			notes: `${record.dba} AT ${record.building} ${record.street} ${record.boro.toUpperCase()} ${record.zipcode} HAS ${record.violation_description}`
 		});
 
 		if (newEntry.phone) {
@@ -75,7 +94,7 @@ async function refreshData({days}) {
 	let records;
 
 	records = await common.getRecords({	moduleName,	baseURL, where, days, dateField, orderBy: dateField	});
-	// records = cleanData(records);
+	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = applyPermits(records, permits);
 	common.data.json.cityDOH = results;
