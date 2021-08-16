@@ -71,7 +71,7 @@ function applyPermits(records, permits) {
 		// Construct a new entry since we need to transform the existing fields
 		const newEntry = common.applyPermit(record, permit, {
 			date: utils.formatDate(record.inspection_date),
-			notes: `${record.dba} AT ${record.building} ${record.street} ${record.boro.toUpperCase()} ${record.zipcode} HAS ${record.violation_description}`
+			notes: `${record.dba}, ${utils.formatPhoneNumber(record.phone)}, AT ${record.building} ${record.street}, ${record.boro.toUpperCase()} ${record.zipcode} HAS VIOLATION: ${record.violation_description}`
 		});
 
 		if (newEntry.phone) {
