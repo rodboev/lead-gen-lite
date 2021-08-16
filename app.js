@@ -10,6 +10,7 @@ const eventEmitter = require('./lib/events');
 const cityDOB = require('./sources/cityDOB');
 const city311 = require('./sources/city311');
 const inspections = require('./sources/inspections');
+const cityDOH = require('./sources/cityDOH');
 const common = require('./sources/common');
 
 // Real-time logging
@@ -28,8 +29,7 @@ app.get('/refresh/:id', async (req, res) => {
 	let source = req.params.id;
 
 	// Return 'city311', 'cityDOB', 'inspections'...
-	if (source === 'dob') source = source.toUpperCase()
-	if (source === 'DOB' || source === '311') source =  'city' + source;
+	if (source === 'DOB' || source === '311' || source === 'DOH') source =  'city' + source;
 
 	if (common.data.csv[source]) {
 		// TODO: Get rid of eval by moving refreshData method into common and parameterizing source
@@ -63,19 +63,18 @@ app.get('/api/all-:id.csv', async function(req , res) {
 	try {
 		let results = [];
 		for (const source of Object.keys(common.data.json)) {
-			for (record of common.data.json[source][dataSet]) {
+			for (const record of common.data.json[source][dataSet]) {
 				results.push(record);
 			}
 		}
 
-		// const result = await common.convertToCSV(results, 'all');
 		const response = await converter.json2csvAsync(results, {
 			emptyFieldValue: ''
 		});
 		res.send(response);
 	}
 	catch (err) {
-		res.send(`${err.message}\nApp probably still loading...`);
+		res.send(`${err.message}`);
 	}
 });
 
@@ -87,8 +86,7 @@ app.get('/api/:id', async function(req , res) {
 
 	// Remove and return 'city311', 'cityDOB', 'inspections'...
 	let source = urlParts.shift();
-	if (source === 'dob') source = source.toUpperCase()
-	if (source === 'DOB' || source === '311') source =  'city' + source;
+	if (source === 'DOB' || source === '311' || source === 'DOH') source =  'city' + source;
 	
 	// Return 'withContacts' or 'withoutContacts'
 	const dataSet = utils.camelCaseArray(urlParts);
@@ -109,6 +107,24 @@ http.listen(port, async () => {
 	await Promise.all([
 		cityDOB.refreshData({ days: common.defaultDays }),
 		city311.refreshData({ days: common.defaultDays }),
-		inspections.refreshData({ days: common.defaultDays })
+		inspections.refreshData({ days: common.defaultDays }),
+		cityDOH.refreshData({ days: common.defaultDays })
 	]);
+
+	let numRecords = 0;
+	let withContacts = 0;
+	for (const source of Object.keys(common.data.json)) {
+		for (const dataSet in common.data.json[source]) {
+			for (const record of common.data.json[source][dataSet]) {
+				numRecords++;
+				if (dataSet === 'withContacts') {
+					withContacts++;
+				}
+			}
+		}
+	}
+
+	const pctOfTotal = Math.round(withContacts / numRecords * 100);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Done getting all sources. Total number of records: ${utils.addCommas(numRecords)}\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Records with contacts: ${utils.addCommas(withContacts)} (${pctOfTotal}% of total)\n`);
 });

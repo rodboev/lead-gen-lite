@@ -18,10 +18,10 @@
 		<div>[ <a href="/api/all-without-contacts.csv">view</a> | <a href="/api/all-without-contacts.csv?action=download">download</a> ]</div>
 	</li>
 	<li>dob-with-contacts.csv
-		<div>[ <a href="/api/dob-with-contacts.csv">view</a> | <a href="/api/dob-with-contacts.csv?action=download">download</a> ]</div>
+		<div>[ <a href="/api/DOB-with-contacts.csv">view</a> | <a href="/api/DOB-with-contacts.csv?action=download">download</a> ]</div>
 	</li>
 	<li>dob-without-contacts.csv
-		<div>[ <a href="/api/dob-without-contacts.csv">view</a> | <a href="/api/dob-without-contacts.csv?action=download">download</a> ]</div>
+		<div>[ <a href="/api/DOB-without-contacts.csv">view</a> | <a href="/api/DOB-without-contacts.csv?action=download">download</a> ]</div>
 	</li>
 	<li>311-with-contacts.csv
 		<div>[ <a href="/api/311-with-contacts.csv">view</a> | <a href="/api/311-with-contacts.csv?action=download">download</a> ]</div>
@@ -34,6 +34,12 @@
 	</li>
 	<li>inspections-without-contacts.csv
 		<div>[ <a href="/api/inspections-without-contacts.csv">view</a> | <a href="/api/inspections-without-contacts.csv?action=download">download</a> ]</div>
+	</li>
+	<li>DOH-with-contacts.csv
+		<div>[ <a href="/api/DOH-with-contacts.csv">view</a> | <a href="/api/DOH-with-contacts.csv?action=download">download</a> ]</div>
+	</li>
+	<li>DOH-without-contacts.csv
+		<div>[ <a href="/api/DOH-without-contacts.csv">view</a> | <a href="/api/DOH-without-contacts.csv?action=download">download</a> ]</div>
 	</li>
 </ul>
 
@@ -50,6 +56,10 @@
 <div class="refresh">
 	<span>Days:</span><input type="text" class="days" value="5" size="1">
 	<a class="button" href="/refresh/inspections">Request Inspections data</span></a>
+</div>
+<div class="refresh">
+	<span>Days:</span><input type="text" class="days" value="5" size="1">
+	<a class="button" href="/refresh/DOH">Request DOH data</span></a>
 </div>
 
 <script src="/vendor/socket.io.min.js"></script>
