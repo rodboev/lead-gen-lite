@@ -26,16 +26,9 @@ io.on('connection', (socket) => {
 
 // App routes to handle requests
 app.get('/refresh/all', async (req, res) => {
-	let refreshRequests = [];
-	try {
-		Object.keys(common.data.json).forEach(source => {
-			refreshRequests.push(eval(source).refreshData({days: req.query.days || common.defaultDays }));
-		});
-	}
-	catch (err) {
-		res.send(`${err.message}`);
-	}
-	Promise.all(refreshRequests).then(async () => {
+	Promise.all(Object.keys(common.data.json).map(source => {
+			eval(source).refreshData({days: req.query.days || common.defaultDays });
+		})).then(async () => {
 		await logSummary();
 	});
 	res.end();
