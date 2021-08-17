@@ -77,12 +77,16 @@ app.get('/api/all-:id.csv', async (req, res) => {
 	const dataSet = utils.camelCaseArray(urlParts);
 
 	try {
+		// Combine records
 		let results = [];
 		for (const source of Object.keys(common.data.json)) {
 			for (const record of common.data.json[source][dataSet]) {
 				results.push(record);
 			}
 		}
+
+		// Sort combined records by date descending
+		results.sort((a, b) => (a.date < b.date) ? 1 : -1)
 
 		const response = await converter.json2csvAsync(results, {
 			emptyFieldValue: ''
