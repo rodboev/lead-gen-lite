@@ -1,6 +1,10 @@
 body {
 	font: 12pt sans-serif;
 	line-height: 1.5;
+	-webkit-text-size-adjust: 100%;
+}
+div, input {
+	box-sizing: border-box;
 }
 body, input {
 	color: #333;
@@ -19,17 +23,18 @@ a:hover:not('.button') {
 	padding-right: 5vw;
 	max-width: 100%;
 	display: inline-block;
-	box-sizing: border-box;
 	overflow-y: scroll;
 	overflow-x: hidden;
 	height: 21em;
 	scroll-behavior: smooth;
 	background: white;
 }
-#output, input {
-	border: 1px solid #ccc;
-	border-radius: 3px;
+#output, input, .table {
 	box-shadow: 0 0 0 1px rgb(89 105 128 / 10%), 0 1px 3px 0 rgb(89 105 128 / 10%), 0 1px 2px 0 rgb(0 0 0 / 5%);
+}
+#output, input {
+	border: 0.5pt solid #ccc;
+	border-radius: 3px;
 }
 input, .button {
 	height: 22pt;
@@ -39,7 +44,6 @@ input {
 	padding-left: 5pt;
 	outline: none;
 	min-width: 2.5em;
-	box-sizing: border-box;
 }
 .refresh span {
 	margin-right: 0.5em;
@@ -86,6 +90,67 @@ input:focus {
 	display: flex;
 	flex-wrap: wrap;
 }
-.links li div {
-	display: inline-block;
+.table {
+	border-radius: 6px;
+	overflow: hidden;
+	max-width: 44em;
+	margin: 1.35em;
+}
+.table > div {
+	display: grid;
+	align-items: center;
+	grid-template-columns: 1.2fr 1fr 1fr;
+}
+.table > div:not(.heading) {
+	border-top: 0.5pt solid #eee;
+}
+.table .heading {
+	font-size: 9pt;
+	text-transform: uppercase;
+}
+.table .heading > div:not(:first-child) {
+	text-align: center;
+}
+.table .heading div:first-child {
+	padding-left: 1em;
+}
+.table > div > div {
+	padding: 0.5em 0.75em;
+}
+.table .actions {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	background: #f6f6f6;
+	justify-content: center;
+}
+.table .actions > div {
+	border-radius: 3px;
+	box-shadow: 0 0 0 1px rgb(71 83 102 / 10%), 0 1px 2px rgb(0 0 0 / 5%);
+	background: white;
+	display: flex;
+	overflow: hidden;
+}
+.table .actions a {
+	padding: 0.25em 1.25em;
+	font-size: 9pt;
+	text-transform: uppercase;
+	display: block;
+	text-decoration: none;
+}
+.table .actions a:not(:first-child) {
+	border-left: 1px solid #eee;
+}
+.table .actions:nth-child(n+3) {
+	border-left: 1px solid #eee;
+}
+.table > div:not(.heading):hover {
+	background-color: #f9f9f9;
+}
+.table > div:hover .actions {
+	background-color: #f0f0f0;
+}
+.table .actions a:hover {
+	background: #3376d2;
+	color: white;
 }

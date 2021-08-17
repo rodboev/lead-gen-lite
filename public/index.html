@@ -4,44 +4,94 @@
     <title>Lead gen</title>
 	<link href="https://fonts.googleapis.com/css?family=Inconsolata:500" rel="stylesheet">
 	<link href="/style.css" rel="stylesheet">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=640, initial-scale=1">
 </head>
 <body>
 
 <div>This API exposes the following endpoints:</div>
 
-<ul class="links">
-	<li>all-with-contacts.csv
-		<div>[ <a href="/api/all-with-contacts.csv">view</a> | <a href="/api/all-with-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>all-without-contacts.csv
-		<div>[ <a href="/api/all-without-contacts.csv">view</a> | <a href="/api/all-without-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>dob-with-contacts.csv
-		<div>[ <a href="/api/DOB-with-contacts.csv">view</a> | <a href="/api/DOB-with-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>dob-without-contacts.csv
-		<div>[ <a href="/api/DOB-without-contacts.csv">view</a> | <a href="/api/DOB-without-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>311-with-contacts.csv
-		<div>[ <a href="/api/311-with-contacts.csv">view</a> | <a href="/api/311-with-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>311-without-contacts.csv
-		<div>[ <a href="/api/311-without-contacts.csv">view</a> | <a href="/api/311-without-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>inspections-with-contacts.csv
-		<div>[ <a href="/api/inspections-with-contacts.csv">view</a> | <a href="/api/inspections-with-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>inspections-without-contacts.csv
-		<div>[ <a href="/api/inspections-without-contacts.csv">view</a> | <a href="/api/inspections-without-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>DOH-with-contacts.csv
-		<div>[ <a href="/api/DOH-with-contacts.csv">view</a> | <a href="/api/DOH-with-contacts.csv?action=download">download</a> ]</div>
-	</li>
-	<li>DOH-without-contacts.csv
-		<div>[ <a href="/api/DOH-without-contacts.csv">view</a> | <a href="/api/DOH-without-contacts.csv?action=download">download</a> ]</div>
-	</li>
-</ul>
+<div class="table">
+	<div class="heading">
+		<div>Data set</div>
+		<div>With contacts</div>
+		<div>Without contacts</div>
+	</div>
+	<div>
+		<div>All data</div>
+		<div class="actions">
+			<div>
+				<a href="/api/all-with-contacts.csv">view</a>
+				<a href="/api/all-with-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+		<div class="actions">
+			<div>
+				<a href="/api/all-without-contacts.csv">view</a>
+				<a href="/api/all-without-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+	</div>
+	<div>
+		<div>DOB Violations</div>
+		<div class="actions">
+			<div>
+				<a href="/api/DOB-with-contacts.csv">view</a>
+				<a href="/api/DOB-with-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+		<div class="actions">
+			<div>
+				<a href="/api/DOB-without-contacts.csv">view</a>
+				<a href="/api/DOB-without-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+	</div>
+	<div>
+		<div>311 Service Requests</div>
+		<div class="actions">
+			<div>
+				<a href="/api/311-with-contacts.csv">view</a>
+				<a href="/api/311-with-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+		<div class="actions">
+			<div>
+				<a href="/api/311-without-contacts.csv">view</a>
+				<a href="/api/311-without-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+	</div>
+	<div>
+		<div>Rodent Inspections</div>
+		<div class="actions">
+			<div>
+				<a href="/api/inspections-with-contacts.csv">view</a>
+				<a href="/api/inspections-with-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+		<div class="actions">
+			<div>
+				<a href="/api/inspections-without-contacts.csv">view</a>
+				<a href="/api/inspections-without-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+	</div>
+	<div>
+		<div>DOH Inspections</div>
+		<div class="actions">
+			<div>
+				<a href="/api/DOH-with-contacts.csv">view</a>
+				<a href="/api/DOH-with-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+		<div class="actions">
+			<div>
+				<a href="/api/DOH-without-contacts.csv">view</a>
+				<a href="/api/DOH-without-contacts.csv?action=download">download</a>
+			</div>
+		</div>
+	</div>
+</div>
 
 <div>If the data looks wrong or you want more records, force a refresh:</div>
 
