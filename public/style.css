@@ -92,7 +92,6 @@ input:focus {
 }
 .table {
 	border-radius: 6px;
-	overflow: hidden;
 	max-width: 44em;
 	margin: 1.35em;
 }
