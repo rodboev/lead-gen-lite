@@ -47,23 +47,14 @@
 
 <div class="refresh">
 	<span>Days:</span><input type="text" class="days" value="5" size="1">
-	<a class="button" href="/refresh/all">Request all data</span></a>
-</div>
-<div class="refresh">
-	<span>Days:</span><input type="text" class="days" value="5" size="1">
-	<a class="button" href="/refresh/dob">Request DOB data</span></a>
-</div>
-<div class="refresh">
-	<span>Days:</span><input type="text" class="days" value="5" size="1">
-	<a class="button" href="/refresh/311">Request 311 data</span></a>
-</div>
-<div class="refresh">
-	<span>Days:</span><input type="text" class="days" value="5" size="1">
-	<a class="button" href="/refresh/inspections">Request Inspections data</span></a>
-</div>
-<div class="refresh">
-	<span>Days:</span><input type="text" class="days" value="5" size="1">
-	<a class="button" href="/refresh/DOH">Request DOH data</span></a>
+	<span>Request:</span>
+	<div class="buttons">
+		<a class="button" href="/refresh/all">All data</span></a>
+		<a class="button" href="/refresh/DOB">DOB</span></a>
+		<a class="button" href="/refresh/311">311</span></a>
+		<a class="button" href="/refresh/inspections">Inspections</span></a>
+		<a class="button" href="/refresh/DOH">DOH</span></a>
+	</div>
 </div>
 
 <script src="/vendor/socket.io.min.js"></script>

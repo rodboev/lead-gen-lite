@@ -31,11 +31,15 @@ a:hover:not('.button') {
 	border-radius: 3px;
 	box-shadow: 0 0 0 1px rgb(89 105 128 / 10%), 0 1px 3px 0 rgb(89 105 128 / 10%), 0 1px 2px 0 rgb(0 0 0 / 5%);
 }
+input, .button {
+	height: 22pt;
+}
 input {
 	font: 10.5pt sans-serif;
 	padding-left: 5pt;
 	outline: none;
 	min-width: 2.5em;
+	box-sizing: border-box;
 }
 .refresh span {
 	margin-right: 0.5em;
@@ -52,7 +56,8 @@ input:focus {
 	text-decoration: none;
 	font-size: 80%;
 	display: inline-block;
-	padding: 4pt 20pt;
+	padding-left: 20pt;
+	padding-right: 20pt;
 	background: #3376d2;
 	color: white;
 	display: flex;
@@ -64,10 +69,22 @@ input:focus {
 .refresh {
 	display: flex;
 	margin: 1em 18pt;
+	align-items: center;
 }
 .refresh span {
 	display: flex;
 	align-items: center;
+}
+.refresh .buttons {
+	margin: -0.25em 0;
+}
+.refresh .button {
+	margin: 0.25em;
+	margin-right: 1em;
+}
+.refresh .buttons {
+	display: flex;
+	flex-wrap: wrap;
 }
 .links li div {
 	display: inline-block;
