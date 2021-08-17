@@ -15,7 +15,7 @@ const common = require('./sources/common');
 
 // Real-time logging
 const history = [];
-eventEmitter.on('logging', function (message) {
+eventEmitter.on('logging', (message) => {
 	history.push(message);
 	io.emit('log_message', message);
 });
@@ -25,6 +25,22 @@ io.on('connection', (socket) => {
 });
 
 // App routes to handle requests
+app.get('/refresh/all', async (req, res) => {
+	let refreshRequests = [];
+	try {
+		Object.keys(common.data.json).forEach(source => {
+			refreshRequests.push(eval(source).refreshData({days: req.query.days || common.defaultDays }));
+		});
+	}
+	catch (err) {
+		res.send(`${err.message}`);
+	}
+	Promise.all(refreshRequests).then(async () => {
+		await logSummary();
+	});
+	res.end();
+});
+
 app.get('/refresh/:id', async (req, res) => {
 	let source = req.params.id;
 
@@ -46,13 +62,13 @@ const csvHeader = action => ({
 	"Content-Type": `text/${action === 'download' ? 'csv' : 'plain'}`
 });
 
-async function emitCacheStatus() {
+async function logCacheStatus() {
 	const cacheLength = await api.cache.length();
-	eventEmitter.emit('logging', `[${utils.getDate()}] Sending request (${cacheLength} requests cached)...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Cached ${cacheLength} requests to external APIs.\n`);
 }
 
-app.get('/api/all-:id.csv', async function(req , res) {
-	let urlParts = req.params.id.split('.')[0].split('-');
+app.get('/api/all-:id.csv', async (req, res) => {
+	let urlParts = req.params.id.split('.')[0].split('-'); // withContacts or withoutContacts
 
 	const action = req.query.action;
 	res.set(csvHeader(action));
@@ -78,7 +94,7 @@ app.get('/api/all-:id.csv', async function(req , res) {
 	}
 });
 
-app.get('/api/:id', async function(req , res) {
+app.get('/api/:id', async (req, res) => {
 	let urlParts = req.params.id.split('.')[0].split('-');
 
 	const action = req.query.action;
@@ -101,16 +117,7 @@ app.get('/api/:id', async function(req , res) {
 
 app.use(express.static('public'));
 
-const port = parseInt(process.env.PORT, 10) || 3000;
-http.listen(port, async () => {
-	console.log(`> [${utils.getDate()}] App listening on port ${port}...`);
-	await Promise.all([
-		cityDOB.refreshData({ days: common.defaultDays }),
-		city311.refreshData({ days: common.defaultDays }),
-		inspections.refreshData({ days: common.defaultDays }),
-		cityDOH.refreshData({ days: common.defaultDays })
-	]);
-
+async function logSummary() {
 	let numRecords = 0;
 	let withContacts = 0;
 	for (const source of Object.keys(common.data.json)) {
@@ -125,6 +132,20 @@ http.listen(port, async () => {
 	}
 
 	const pctOfTotal = Math.round(withContacts / numRecords * 100);
-	eventEmitter.emit('logging', `[${utils.getDate()}] Done getting all sources. Total number of records: ${utils.addCommas(numRecords)}\n`);
-	eventEmitter.emit('logging', `[${utils.getDate()}] Records with contacts: ${utils.addCommas(withContacts)} (${pctOfTotal}% of total)\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Updated sources. Total records: ${utils.addCommas(numRecords)}, with contacts: ${utils.addCommas(withContacts)} (${pctOfTotal}%)\n`);
+
+	await logCacheStatus();
+}
+
+const port = parseInt(process.env.PORT, 10) || 3000;
+http.listen(port, async () => {
+	console.log(`> [${utils.getDate()}] App listening on port ${port}...`);
+	await Promise.all([
+		cityDOB.refreshData({ days: common.defaultDays }),
+		city311.refreshData({ days: common.defaultDays }),
+		inspections.refreshData({ days: common.defaultDays }),
+		cityDOH.refreshData({ days: common.defaultDays })
+	]);
+
+	await logSummary();
 });
