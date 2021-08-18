@@ -60,14 +60,14 @@ async function logCacheStatus() {
 	eventEmitter.emit('logging', `[${utils.getDate()}] Cached ${cacheLength} requests to external APIs.\n`);
 }
 
-app.get('/api/all-:id.csv', async (req, res) => {
-	let urlParts = req.params.id.split('.')[0].split('-'); // withContacts or withoutContacts
+app.get('/api/all-:id', async (req, res) => {
+	const urlParts = req.params.id.split('.');
+	const set = urlParts[0].split('-');
+	const dataSet = utils.camelCaseArray(set);
+	const fileExt = urlParts[1];
 
 	const action = req.query.action;
 	res.set(csvHeader(action));
-
-	// Return 'withContacts' or 'withoutContacts'
-	const dataSet = utils.camelCaseArray(urlParts);
 
 	try {
 		// Combine records
@@ -81,10 +81,19 @@ app.get('/api/all-:id.csv', async (req, res) => {
 		// Sort combined records by date descending
 		results.sort((a, b) => (a.date < b.date) ? 1 : -1)
 
-		const response = await converter.json2csvAsync(results, {
-			emptyFieldValue: ''
-		});
-		res.send(response);
+		if (fileExt === 'csv') {
+			const response = await converter.json2csvAsync(results, {
+				emptyFieldValue: ''
+			});
+			res.send(response);
+		}
+		else if (fileExt === 'json') {
+			const response = results;
+			res.send(response);
+		}
+		else {
+			res.status(404).send('Not found');
+		}
 	}
 	catch (err) {
 		res.send(`${err.message}`);
@@ -92,19 +101,26 @@ app.get('/api/all-:id.csv', async (req, res) => {
 });
 
 app.get('/api/:id', async (req, res) => {
-	let urlParts = req.params.id.split('.')[0].split('-');
+	const urlParts = req.params.id.split('.');
+	let sourceAndSet = urlParts[0].split('-');
+	const fileExt = urlParts[1];
 
 	const action = req.query.action;
 	res.set(csvHeader(action));
 
 	// Remove and return 'city311', 'cityDOB', 'inspections'...
-	let source = urlParts.shift();
+	let source = sourceAndSet.shift();
 	if (source === 'DOB' || source === '311' || source === 'DOH') source =  'city' + source;
-	
 	// Return 'withContacts' or 'withoutContacts'
-	const dataSet = utils.camelCaseArray(urlParts);
-	if (common.data.csv[source]) {
+	const dataSet = utils.camelCaseArray(sourceAndSet);
+
+	// Server up CSV or JSON
+	if (fileExt === 'csv' && common.data.csv[source]) {
 		const data = common.getDataCSV(source, dataSet);
+		res.send(data);
+	}
+	else if (fileExt === 'json' && common.data.json[source]) {
+		const data = common.data.json[source][dataSet];
 		res.send(data);
 	}
 	else {
