@@ -119,7 +119,9 @@ function applyPermit(record, permit, customFields) {
 		}
 		newEntry.first_name = permit.owner_s_first_name ? permit.owner_s_first_name.toUpperCase() : '';
 		newEntry.last_name = permit.owner_s_last_name ? permit.owner_s_last_name.toUpperCase() : '';
-		newEntry.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name ? permit.owner_s_house_street_name.toUpperCase() : ''}`;
+		if (permit.owner_s_house__ && permit.owner_s_house_street_name) {
+			newEntry.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name.toUpperCase()}`;
+		}
 		newEntry.city = permit.city ? permit.city.toUpperCase() : '';
 		newEntry.state = permit.state ? permit.state.toUpperCase() : '';
 		newEntry.zip = permit.owner_s_zip_code ? permit.owner_s_zip_code : '';
