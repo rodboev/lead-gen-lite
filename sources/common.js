@@ -117,12 +117,12 @@ function applyPermit(record, permit, customFields) {
 		if (newEntry.company === 'NA' || newEntry.company === 'N/A') {
 			newEntry.company = '';
 		}
-		newEntry.first_name = permit.owner_s_first_name;
-		newEntry.last_name = permit.owner_s_last_name;
-		newEntry.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name}`;
-		newEntry.city = permit.city;
-		newEntry.state = permit.state;
-		newEntry.zip = permit.owner_s_zip_code;
+		newEntry.first_name = permit.owner_s_first_name ? permit.owner_s_first_name.toUpperCase() : '';
+		newEntry.last_name = permit.owner_s_last_name ? permit.owner_s_last_name.toUpperCase() : '';
+		newEntry.address = `${permit.owner_s_house__} ${permit.owner_s_house_street_name ? permit.owner_s_house_street_name.toUpperCase() : ''}`;
+		newEntry.city = permit.city ? permit.city.toUpperCase() : '';
+		newEntry.state = permit.state ? permit.state.toUpperCase() : '';
+		newEntry.zip = permit.owner_s_zip_code ? permit.owner_s_zip_code : '';
 		if (permit.owner_s_phone__) {
 			newEntry.phone = permit.owner_s_phone__;
 		}

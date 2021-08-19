@@ -89,10 +89,20 @@ function applyPermits(records, permits) {
 		// Find most recent owner that matches block and lot
 		const permit = permits.find(permit => permit.block === record.block && permit.lot === record.lot);
 
+		// Prevent empty fields from being added to notes
+		let notes = '';
+		if (record.house_number) {
+			notes += record.house_number + ' ';
+		}
+		if (record.street_name) {
+			notes += record.street_name + ' ';
+		}
+		notes += `${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`;
+		
 		// Construct a new entry since we need to transform the existing fields
 		const newEntry = common.applyPermit(record, permit, {
 			date: record.inspection_date,
-			notes: `${record.house_number} ${record.street_name} ${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`
+			notes
 		});
 	
 		if (newEntry.phone) {
