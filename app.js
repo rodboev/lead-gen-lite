@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
+const cors = require('cors')
 const io = require('socket.io')(http);
 const converter = require('json-2-csv');
 
@@ -23,6 +24,9 @@ io.on('connection', (socket) => {
 	socket.emit('logging', history);
 	io.emit('log_message', history.join(''));
 });
+
+// Allow requests from map-gen
+app.use(cors());
 
 // App routes to handle requests
 app.get('/refresh/all', async (req, res) => {
@@ -150,7 +154,7 @@ async function logSummary() {
 	await logCacheStatus();
 }
 
-const port = parseInt(process.env.PORT, 10) || 3000;
+const port = parseInt(process.env.PORT, 10) || 5000;
 http.listen(port, async () => {
 	console.log(`> [${utils.getDate()}] App listening on port ${port}...`);
 	await Promise.all([
