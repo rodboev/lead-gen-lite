@@ -149,7 +149,7 @@ async function logSummary() {
 	}
 
 	const pctOfTotal = Math.round(withContacts / numRecords * 100);
-	eventEmitter.emit('logging', `[${utils.getDate()}] Updated sources. Total records: ${utils.addCommas(numRecords)}, with contacts: ${utils.addCommas(withContacts)} (${pctOfTotal}%)\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] Updated sources. Total records: ${utils.addCommas(numRecords)}. With contacts: ${utils.addCommas(withContacts)} (${pctOfTotal}%)\n`);
 
 	await logCacheStatus();
 }

@@ -17,17 +17,6 @@ function cleanData(records) {
 		record.novdescription = trimDescription(record.novdescription);
 	}
 
-	// Combine multiple subsequent descriptions by folding onto previous and removing new entry
-	// TODO: Parse list and combine all descriptions where the same address and the date are equal
-	const originalLength = records.length;
-	for (const [i, record] of records.entries()) {
-		if (records[i - 1] && record.housenumber === records[i - 1].housenumber && record.streetname === records[i - 1].streetname && record.apartment === records[i - 1].apartment) {
-			records[i - 1].novdescription += ` AND ${record.novdescription}`;
-			records.splice(i, 1);
-		}
-	}
-
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${utils.addCommas(originalLength - records.length)} ${moduleName} violation descriptions...\n`);
 	return records;
 }
 
@@ -89,18 +78,23 @@ function constructResults(records, permits) {
 		}
 	}
 
-	results.withContacts = utils.removeDuplicates(results.withContacts);
-	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+	for (const dataSet in results) {
+		results[dataSet] = common.combineNotes({
+			records: results[dataSet],
+			moduleName,
+		});
+	}
 
 	return results;
 }
 
 async function refreshData({days}) {
-	const baseURL = '/mkgf-zjhb.json';
+	const baseURL = '/wvxf-dwi5.json';
+	const where = `starts_with(novdescription, 'HMC')`;
 	const dateField = 'inspectiondate';
 	let records;
 	
-	records = await common.getRecords({ moduleName,	baseURL, days, dateField, orderBy: dateField });
+	records = await common.getRecords({ moduleName,	baseURL, where, days, dateField, orderBy: dateField });
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = constructResults(records, permits);

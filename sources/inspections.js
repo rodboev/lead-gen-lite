@@ -108,8 +108,12 @@ function constructResults(records, permits) {
 		}
 	}
 
-	results.withContacts = utils.removeDuplicates(results.withContacts);
-	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+	for (const dataSet in results) {
+		results[dataSet] = common.combineNotes({
+			records: results[dataSet],
+			moduleName,
+		});
+	}
 
 	return results;
 }

@@ -87,8 +87,12 @@ function constructResults(records) {
 		}
 	}
 
-	results.withContacts = utils.removeDuplicates(results.withContacts);
-	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+	for (const dataSet in results) {
+		results[dataSet] = common.combineNotes({
+			records: results[dataSet],
+			moduleName,
+		});
+	}
 
 	return results;
 }
@@ -97,7 +101,7 @@ let data;
 
 async function refreshData({days}) {
 	const baseURL = '/43nn-pn8j.json';
-	const where = `action not in('No violations were recorded at the time of this inspection.')`;
+	const where = `violation_code in('04L','04K','04M','04N','08A','08C')`;
 	const dateField = 'inspection_date';
 	let records;
 

@@ -113,8 +113,12 @@ function constructResults(records, permits) {
 		}
 	}
 
-	results.withContacts = utils.removeDuplicates(results.withContacts);
-	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+	for (const dataSet in results) {
+		results[dataSet] = common.combineNotes({
+			records: results[dataSet],
+			moduleName,
+		});
+	}
 
 	return results;
 }
@@ -123,7 +127,7 @@ let data;
 
 async function refreshData({days}) {
 	const baseURL = '/erm2-nwe9.json';
-	const where = `(descriptor in('PESTS') OR complaint_type = 'Rodent')`;
+	const where = `(descriptor in('PESTS') OR complaint_type in('Rodent'))`;
 	const dateField = 'created_date';
 	let records;
 

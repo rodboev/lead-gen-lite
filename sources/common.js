@@ -131,6 +131,34 @@ function getPermitFields(permit) {
 	return newEntry;
 }
 
+function combineNotes({records, moduleName}) {
+	const originalLength = records.length;
+
+	records = utils.removeDuplicates(records);
+
+	for (let i = 0; i < records.length; i++) {
+		let combined = 0;
+		for (let j = records.length - 1; j > i; j--) {
+			if (records[i].date === records[j].date &&
+				// Make sure we're not matching empty addresses as equal
+				records[i].address &&
+				(records[i].address === records[j].address)
+			) {
+				records[i].notes += ` AND ${records[j].notes}`;
+				records.splice(j, 1);
+				combined++;
+			}
+		}
+		if (combined > 0) {
+			records[i].notes = `(${combined + 1}) ${records[i].notes}`;
+		}
+	}
+
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combined ${utils.addCommas(originalLength - records.length)} notes based on same date and address...\n`);
+
+	return records;
+}
+
 module.exports = {
 	defaultLimit,
 	defaultDays,
@@ -141,5 +169,6 @@ module.exports = {
 	convertToCSV,
 	fetchData,
 	getUniquePermits,
-	getPermitFields
+	getPermitFields,
+	combineNotes
 };
