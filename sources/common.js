@@ -111,8 +111,9 @@ function getPermitFields(permit) {
 	const newEntry = Object.create(null);
 
 	if (permit) {
-		if (newEntry.company && (newEntry.company.toUpperCase() !== 'NA' || newEntry.company.toUpperCase() !== 'N/A')) {
-			newEntry.company = permit.owner_s_business_name;
+		newEntry.company = permit.owner_s_business_name;
+		if (newEntry.company && (newEntry.company.toUpperCase() === 'NA' || newEntry.company.toUpperCase() === 'N/A')) {
+			newEntry.company = '';
 		}
 		newEntry.first_name = permit.owner_s_first_name ? permit.owner_s_first_name.toUpperCase() : '';
 		newEntry.last_name = permit.owner_s_last_name ? permit.owner_s_last_name.toUpperCase() : '';
