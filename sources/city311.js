@@ -113,6 +113,9 @@ function constructResults(records, permits) {
 		}
 	}
 
+	results.withContacts = utils.removeDuplicates(results.withContacts);
+	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+
 	return results;
 }
 

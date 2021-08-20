@@ -108,6 +108,9 @@ function constructResults(records, permits) {
 		}
 	}
 
+	results.withContacts = utils.removeDuplicates(results.withContacts);
+	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+
 	return results;
 }
 
@@ -123,7 +126,6 @@ async function refreshData({days}) {
 	records = cleanData(records);
 	const permits = await getPermits(records);
 	const results = constructResults(records, permits);
-	common.data.json.inspections = results;
 	common.data.csv.inspections = await common.convertToCSV(results, moduleName);
 }
 

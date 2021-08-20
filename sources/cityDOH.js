@@ -87,6 +87,9 @@ function constructResults(records) {
 		}
 	}
 
+	results.withContacts = utils.removeDuplicates(results.withContacts);
+	results.withoutContacts = utils.removeDuplicates(results.withoutContacts);
+
 	return results;
 }
 
