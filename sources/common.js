@@ -113,9 +113,8 @@ function applyPermit(record, permit, customFields) {
 	newEntry.notes = customFields.notes.toUpperCase();
 
 	if (permit) {
-		newEntry.company = permit.owner_s_business_name;
-		if (newEntry.company === 'NA' || newEntry.company === 'N/A') {
-			newEntry.company = '';
+		if (newEntry.company && (newEntry.company.toUpperCase() !== 'NA' || newEntry.company.toUpperCase() !== 'N/A')) {
+			newEntry.company = permit.owner_s_business_name;
 		}
 		newEntry.first_name = permit.owner_s_first_name ? permit.owner_s_first_name.toUpperCase() : '';
 		newEntry.last_name = permit.owner_s_last_name ? permit.owner_s_last_name.toUpperCase() : '';

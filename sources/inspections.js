@@ -77,8 +77,8 @@ async function getPermits(records) {
 }
 
 // Try to match up every record with an owner
-function applyPermits(records, permits) {
-	const dataObj = {
+function constructResults(records, permits) {
+	const results = {
 		withContacts: [],
 		withoutContacts: []
 	};
@@ -106,14 +106,14 @@ function applyPermits(records, permits) {
 		});
 	
 		if (newEntry.phone) {
-			dataObj.withContacts.push(newEntry);
+			results.withContacts.push(newEntry);
 		}
 		else {
-			dataObj.withoutContacts.push(newEntry);
+			results.withoutContacts.push(newEntry);
 		}
 	}
 
-	return dataObj;
+	return results;
 }
 
 let data;
@@ -127,7 +127,7 @@ async function refreshData({days}) {
 	records = await common.getRecords({	moduleName,	baseURL, where, days, dateField, orderBy: dateField	});
 	records = cleanData(records);
 	const permits = await getPermits(records);
-	const results = applyPermits(records, permits);
+	const results = constructResults(records, permits);
 	common.data.json.inspections = results;
 	common.data.csv.inspections = await common.convertToCSV(results, moduleName);
 }

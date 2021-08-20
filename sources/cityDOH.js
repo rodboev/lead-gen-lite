@@ -16,7 +16,7 @@ function cleanData(records) {
 		}
 	}
 
-	// Combine subsequent descriptions by folding onto previous and removing new entry
+	// Combine multiple subsequent descriptions by folding onto previous and removing new entry
 	const originalLength = records.length;
 	for (const [i, record] of records.entries()) {
 		if (records[i - 1] && record.building === records[i - 1].building && record.street === records[i - 1].street) {
@@ -56,8 +56,8 @@ async function getPermits(records) {
 }
 
 // Try to match up every record with an owner
-function applyPermits(records, permits) {
-	const dataObj = {
+function constructResults(records, permits) {
+	const results = {
 		withContacts: [],
 		withoutContacts: []
 	};
@@ -75,14 +75,14 @@ function applyPermits(records, permits) {
 		});
 
 		if (newEntry.phone) {
-			dataObj.withContacts.push(newEntry);
+			results.withContacts.push(newEntry);
 		}
 		else {
-			dataObj.withoutContacts.push(newEntry);
+			results.withoutContacts.push(newEntry);
 		}
 	}
 
-	return dataObj;
+	return results;
 }
 
 let data;
@@ -96,7 +96,7 @@ async function refreshData({days}) {
 	records = await common.getRecords({	moduleName,	baseURL, where, days, dateField, orderBy: dateField	});
 	records = cleanData(records);
 	const permits = await getPermits(records);
-	const results = applyPermits(records, permits);
+	const results = constructResults(records, permits);
 	common.data.json.cityDOH = results;
 	common.data.csv.cityDOH = await common.convertToCSV(results, moduleName);
 }

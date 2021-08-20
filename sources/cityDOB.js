@@ -17,7 +17,8 @@ function cleanData(records) {
 		record.novdescription = trimDescription(record.novdescription);
 	}
 
-	// Combine descriptions by folding onto previous and removing new entry
+	// Combine multiple subsequent descriptions by folding onto previous and removing new entry
+	// TODO: Parse list and combine all descriptions where the same address and the date are equal
 	const originalLength = records.length;
 	for (const [i, record] of records.entries()) {
 		if (records[i - 1] && record.housenumber === records[i - 1].housenumber && record.streetname === records[i - 1].streetname && record.apartment === records[i - 1].apartment) {
@@ -26,7 +27,7 @@ function cleanData(records) {
 		}
 	}
 
-	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${utils.addCommas(originalLength - records.length)} violation descriptions...\n`);
+	eventEmitter.emit('logging', `[${utils.getDate()}] (${moduleName}) Combining ${utils.addCommas(originalLength - records.length)} ${moduleName} violation descriptions...\n`);
 	return records;
 }
 
@@ -57,8 +58,8 @@ async function getPermits(records) {
 }
 
 // Try to match up every record with an owner
-function applyPermits(records, permits) {
-	const dataObj = {
+function constructResults(records, permits) {
+	const results = {
 		withContacts: [],
 		withoutContacts: []
 	};
@@ -76,14 +77,14 @@ function applyPermits(records, permits) {
 		});
 
 		if (newEntry.phone) {
-			dataObj.withContacts.push(newEntry);
+			results.withContacts.push(newEntry);
 		}
 		else {
-			dataObj.withoutContacts.push(newEntry);
+			results.withoutContacts.push(newEntry);
 		}
 	}
 
-	return dataObj;
+	return results;
 }
 
 async function refreshData({days}) {
@@ -94,7 +95,7 @@ async function refreshData({days}) {
 	records = await common.getRecords({ moduleName,	baseURL, days, dateField, orderBy: dateField });
 	records = cleanData(records);
 	const permits = await getPermits(records);
-	const results = applyPermits(records, permits);
+	const results = constructResults(records, permits);
 	common.data.json.cityDOB = results;
 	common.data.csv.cityDOB = await common.convertToCSV(results, moduleName);
 }
