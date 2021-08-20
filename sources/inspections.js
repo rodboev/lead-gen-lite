@@ -90,14 +90,7 @@ function constructResults(records, permits) {
 		const permit = permits.find(permit => permit.block === record.block && permit.lot === record.lot);
 
 		// Construct notes field, preventing empty fields from being added
-		let notes = '';
-		if (record.house_number) {
-			notes += record.house_number + ' ';
-		}
-		if (record.street_name) {
-			notes += record.street_name + ' ';
-		}
-		notes += `${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`;
+		let notes = `${[record.house_number, record.street_name].filter(Boolean).join(' ')} ${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`;
 		notes = notes.toUpperCase();
 		
 		// Construct a new entry since we need to transform the existing fields
