@@ -94,11 +94,16 @@ function constructResults(records, permits) {
 		// Find most recent owner that matches house number and street name
 		const permit = permits.find(permit => permit.owner_s_house__ === record.houseNumber && permit.owner_s_house_street_name === record.streetName);
 
+		// Construct notes field
+		let notes = `${record.incident_address} ${record.borough} ${record.incident_zip} HAS ${record.complaint_type.toUpperCase()}: ${record.descriptor.toUpperCase()}`;
+		notes = notes.toUpperCase();
+
 		// Construct a new entry since we need to transform the existing fields
-		const newEntry = common.applyPermit(record, permit, {
+		const newEntry = {
 			date: utils.formatDate(record.created_date),
-			notes: `${record.incident_address} ${record.borough} ${record.incident_zip} HAS ${record.complaint_type.toUpperCase()}: ${record.descriptor.toUpperCase()}`
-		});
+			notes,
+			...common.getPermitFields(permit),
+		}
 	
 		if (newEntry.phone) {
 			results.withContacts.push(newEntry);

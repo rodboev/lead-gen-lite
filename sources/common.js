@@ -107,10 +107,8 @@ async function fetchData({ moduleName = '', baseURL, where = '', days, dateField
 	return records;
 }
 
-function applyPermit(record, permit, customFields) {
+function getPermitFields(permit) {
 	const newEntry = Object.create(null);
-	newEntry.date = customFields.date;
-	newEntry.notes = customFields.notes.toUpperCase();
 
 	if (permit) {
 		if (newEntry.company && (newEntry.company.toUpperCase() !== 'NA' || newEntry.company.toUpperCase() !== 'N/A')) {
@@ -142,5 +140,5 @@ module.exports = {
 	convertToCSV,
 	fetchData,
 	getUniquePermits,
-	applyPermit
+	getPermitFields
 };

@@ -67,12 +67,17 @@ function constructResults(records, permits) {
 	for (record of records) {
 		// Find most recent owner by BIN
 		const permit = permits.find(permit => permit.bin__ === record.bin);
+		
+		// Construct notes field
+		let notes = `${record.dba}, ${utils.formatPhoneNumber(record.phone)}, AT ${record.building} ${record.street}, ${record.boro.toUpperCase()} ${record.zipcode} HAS VIOLATION: ${record.violation_description}`;
+		notes = notes.toUpperCase();
 
 		// Construct a new entry since we need to transform the existing fields
-		const newEntry = common.applyPermit(record, permit, {
+		const newEntry = {
 			date: utils.formatDate(record.inspection_date),
-			notes: `${record.dba}, ${utils.formatPhoneNumber(record.phone)}, AT ${record.building} ${record.street}, ${record.boro.toUpperCase()} ${record.zipcode} HAS VIOLATION: ${record.violation_description}`
-		});
+			notes,
+			...common.getPermitFields(permit),
+		}
 
 		if (newEntry.phone) {
 			results.withContacts.push(newEntry);

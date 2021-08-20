@@ -89,7 +89,7 @@ function constructResults(records, permits) {
 		// Find most recent owner that matches block and lot
 		const permit = permits.find(permit => permit.block === record.block && permit.lot === record.lot);
 
-		// Prevent empty fields from being added to notes
+		// Construct notes field, preventing empty fields from being added
 		let notes = '';
 		if (record.house_number) {
 			notes += record.house_number + ' ';
@@ -98,12 +98,14 @@ function constructResults(records, permits) {
 			notes += record.street_name + ' ';
 		}
 		notes += `${record.borough && record.borough} ${record.zip_code} ${record.inspection_type} INSPECTION: ${record.result}`;
+		notes = notes.toUpperCase();
 		
 		// Construct a new entry since we need to transform the existing fields
-		const newEntry = common.applyPermit(record, permit, {
+		const newEntry = {
 			date: record.inspection_date,
-			notes
-		});
+			notes,
+			...common.getPermitFields(permit),
+		}
 	
 		if (newEntry.phone) {
 			results.withContacts.push(newEntry);
