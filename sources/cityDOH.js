@@ -64,15 +64,11 @@ function constructResults(records) {
 	};
 
 	for (record of records) {
-		// Construct notes field
-		let notes = record.violation_description;
-		notes = notes.toUpperCase();
-
 		// Construct a new entry since we need to transform the existing fields
 		const newEntry = {
 			date: utils.formatDate(record.inspection_date),
-			notes,
-			company: record.dba,
+			notes: record.violation_description.toUpperCase(),
+			company: record.dba.toUpperCase(),
 			address: [record.building, record.street].filter(Boolean).join(' '),
 			city: record.boro.toUpperCase(),
 			zip: record.zipcode,
