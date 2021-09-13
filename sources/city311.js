@@ -102,6 +102,9 @@ function constructResults(records, permits) {
 		const newEntry = {
 			date: utils.formatDate(record.created_date),
 			notes,
+			violation_address: record.incident_address,
+			violation_city: record.borough,
+			violation_zip: record.incident_zip,
 			...common.getPermitFields(permit),
 		}
 	
