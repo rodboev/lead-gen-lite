@@ -12,10 +12,10 @@ socket.on('log_message', function (msg) {
 	output.scrollTop = output.scrollHeight;
 });
 
-const days = document.querySelector('.days').value;
 document.querySelectorAll('.button').forEach(button => {
 	button.addEventListener('click', event => {
 		const el = event.target;
+		const days = document.querySelector('.days').value;
 		event.preventDefault();
 		fetch(el.href + '?' + new URLSearchParams({ days }).toString());
 	})
