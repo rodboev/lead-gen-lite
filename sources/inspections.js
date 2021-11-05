@@ -125,7 +125,7 @@ let data;
 
 async function refreshData({days}) {
 	const baseURL = '/p937-wjvj.json';
-	const where = `result not in('Passed')`;
+	const where = `result not in('Passed', 'Bait applied', 'Monitoring visit', 'Stoppage done')`;
 	const dateField = 'inspection_date';
 	let records;
 
