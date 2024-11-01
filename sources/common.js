@@ -78,7 +78,7 @@ function getUniquePermits(permits, moduleName = "") {
 
   const uniquePermits = [];
   const matchBy = ["bin__", "house__", "street_name", "block", "lot"];
-  if (permits.length > 0) {
+  if (permits?.length > 0) {
     for (const permit of permits) {
       if (
         !uniquePermits.some(
