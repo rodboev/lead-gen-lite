@@ -97,7 +97,7 @@ function getUniquePermits(permits, moduleName = "") {
   eventEmitter.emit(
     "logging",
     `[${utils.getDate()}] (${moduleName}) Filtering ${utils.addCommas(
-      permits.length
+      permits?.length
     )} permits down to ${uniquePermits.length} uniques...\n`
   );
 
